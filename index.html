@@ -335,6 +335,22 @@ body{font-family:-apple-system,'Segoe UI',system-ui,sans-serif;background:var(--
   </div>
 </div>
 
+<!-- MODAL EU DEVO -->
+<div class="modal-backdrop" id="modal-eudevo" onclick="if(event.target===this)fecharEuDevo()">
+  <div class="modal-inner">
+    <div class="modal-handle"></div>
+    <h3><i class="ti ti-arrow-back-up" style="color:var(--red)"></i> Eu devo a <span id="eudevo-nome-titulo"></span></h3>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:1rem">Registre um valor que você deve. Será abatido do saldo.</p>
+    <div class="field"><label>Descrição</label><input type="text" id="eudevo-desc" placeholder="Ex: Cinema, Jantar..."></div>
+    <div class="field"><label>Valor (R$)</label><input type="number" id="eudevo-val" step="0.01" placeholder="0,00" min="0"></div>
+    <input type="hidden" id="eudevo-pessoa">
+    <div class="modal-btns">
+      <button class="btn" onclick="fecharEuDevo()">Cancelar</button>
+      <button class="btn btn-danger" onclick="salvarEuDevo()"><i class="ti ti-check"></i> Registrar</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL DEVO A -->
 <div class="modal-backdrop" id="modal-devo" onclick="if(event.target===this)fecharDevo()">
   <div class="modal-inner">
@@ -779,7 +795,10 @@ function renderPessoas(){
     });
     html+=`<div style="padding:.875rem 1rem;background:var(--bg2);display:flex;justify-content:space-between;align-items:center">
       <strong style="color:${saldoCor}">${saldoZero?'Quitado':saldoPositivo?`A receber: ${fmt(saldo)}`:`Você deve: ${fmt(Math.abs(saldo))}`}</strong>
-      ${tudoRecebido||saldoZero?'<span class="tag-recebido">✓ Tudo certo</span>':''}
+      <div style="display:flex;gap:6px;align-items:center">
+        ${tudoRecebido||saldoZero?'<span class="tag-recebido">✓ Tudo certo</span>':''}
+        <button class="btn btn-sm" onclick="abrirEuDevo('${nome}')" style="font-size:12px;height:30px;padding:0 10px"><i class="ti ti-arrow-back-up"></i> Eu devo</button>
+      </div>
     </div></div>`;
   });
   document.getElementById('lista-pessoas').innerHTML=html;
@@ -798,6 +817,28 @@ function abrirCobranca(nome){
 }
 function fecharModal(){document.getElementById('modal-cobranca').classList.remove('open');}
 function copiarCobranca(){navigator.clipboard.writeText(document.getElementById('modal-texto').value).then(()=>toast('Copiado!')).catch(()=>toast('Erro',false));}
+
+// EU DEVO A ALGUÉM
+function abrirEuDevo(nome){
+  document.getElementById('eudevo-desc').value='';
+  document.getElementById('eudevo-val').value='';
+  document.getElementById('eudevo-pessoa').value=nome;
+  document.getElementById('eudevo-nome-titulo').textContent=nome;
+  document.getElementById('modal-eudevo').classList.add('open');
+  setTimeout(()=>document.getElementById('eudevo-desc').focus(),100);
+}
+function fecharEuDevo(){document.getElementById('modal-eudevo').classList.remove('open');}
+function salvarEuDevo(){
+  const desc=document.getElementById('eudevo-desc').value.trim();
+  const val=parseFloat(document.getElementById('eudevo-val').value);
+  const pessoa=document.getElementById('eudevo-pessoa').value;
+  if(!desc||isNaN(val)||val<=0){toast('Preencha descrição e valor',false);return;}
+  const hoje=new Date().toISOString().slice(0,10);
+  // Valor negativo = você deve a ela (abate do saldo)
+  lancamentos.push({data:hoje,desc,valor:-val,parcAtual:1,parcTotal:1,resp:pessoa,cartao:'DEBITO',sit:'Eu devo'});
+  fecharEuDevo();salvarDados();renderTudo();renderPessoas();
+  toast(`Registrado! Você deve ${fmt(val)} a ${pessoa}`);
+}
 
 // PAGUEI POR ALGUÉM
 function abrirPagueiPor(){document.getElementById('pp-desc').value='';document.getElementById('pp-val').value='';document.getElementById('pp-pessoa').value='';document.getElementById('modal-paguei').classList.add('open');setTimeout(()=>document.getElementById('pp-desc').focus(),100);}
