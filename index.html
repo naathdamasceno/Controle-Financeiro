@@ -471,7 +471,7 @@ function fazerLogin(){
   document.getElementById('t-avatar').style.background=p.cor;document.getElementById('t-avatar').textContent=p.ini;
   document.getElementById('t-nome').textContent=p.nome;document.getElementById('cfg-nome').textContent=p.nome;
   document.getElementById('toggle-mae-wrap').style.display=p.temBeneficio?'block':'none';
-  carregarRenda();carregarRecorrentes();carregarDados();renderTudo();
+  carregarRenda();carregarRecorrentes();carregarDados();gerarParcelasSeNecessario();renderTudo();
 }
 function sair(){perfilAtivo=null;perfilSel=null;document.getElementById('app').style.display='none';document.getElementById('login-screen').style.display='flex';document.querySelectorAll('.lp-btn').forEach(b=>b.classList.remove('selected'));setNav('inicio');}
 function alterarSenha(){
@@ -519,8 +519,31 @@ function setNav(id){
   if(id==='inicio')renderInicio();if(id==='pessoas'){renderPessoas();verificarBannerProximoMes();}if(id==='recorrentes')renderRecorrentes();
   window.scrollTo(0,0);
 }
-function trocarMes(){carregarDados();renderTudo();}
+function trocarMes(){carregarDados();gerarParcelasSeNecessario();renderTudo();}
 function renderTudo(){renderLista();renderMetricas();renderInicio();}
+
+function gerarParcelasSeNecessario(){
+  // Verifica se o mês anterior tem parcelas não finalizadas que ainda não foram copiadas para o mês atual
+  const mesSel=document.getElementById('selMes').value;
+  const [mm,aa]=mesSel.split('.').map(Number);
+  let amm=mm-1,aaa=aa;if(amm<1){amm=12;aaa--;}
+  const mesAnterior=`${String(amm).padStart(2,'0')}.${aaa}`;
+  const dadosAll=JSON.parse(localStorage.getItem(sk('dados'))||'{}');
+  const lancAnt=dadosAll[mesAnterior];
+  if(!lancAnt||!lancAnt.length)return;
+  // Se o mês atual já tem dados, não sobrescreve
+  if(lancamentos.length>0)return;
+  // Copia parcelas não finalizadas do mês anterior
+  const data1=`${aa}-${String(mm).padStart(2,'0')}-01`;
+  let count=0;
+  lancAnt.forEach(l=>{
+    if(l.parcTotal>1&&l.parcAtual<l.parcTotal){
+      lancamentos.push({...l,data:data1,parcAtual:l.parcAtual+1,sit:''});
+      count++;
+    }
+  });
+  if(count>0){salvarDados();toast(`${count} parcela(s) gerada(s) automaticamente!`);}
+}
 
 // INICIO
 function renderInicio(){
