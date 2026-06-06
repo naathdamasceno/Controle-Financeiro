@@ -247,6 +247,7 @@ body{font-family:-apple-system,'Segoe UI',system-ui,sans-serif;background:var(--
     <div style="display:flex;gap:8px;margin-bottom:.75rem">
       <div class="field" style="margin-bottom:0;flex:1"><input type="text" id="filtro-pessoa" placeholder="Buscar pessoa..." oninput="renderPessoas()" style="width:100%"></div>
       <button class="btn btn-sm btn-primary" onclick="abrirPagueiPor()" style="white-space:nowrap;flex-shrink:0"><i class="ti ti-coin"></i> Paguei por</button>
+      <button class="btn btn-sm btn-danger" onclick="abrirDevo()" style="white-space:nowrap;flex-shrink:0"><i class="ti ti-arrow-back-up"></i> Devo a</button>
     </div>
     <div style="font-size:13px;color:var(--text2);margin-bottom:.75rem" id="filtro-total-rec"></div>
     <div id="lista-pessoas"></div>
@@ -298,7 +299,7 @@ body{font-family:-apple-system,'Segoe UI',system-ui,sans-serif;background:var(--
     </div>
     <div class="field"><label>Descrição</label><input type="text" id="f-desc" placeholder="Ex: Restaurante, iFood..."></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-      <div class="field"><label>Valor total (R$)</label><input type="number" id="f-val" placeholder="0,00" step="0.01" min="0" oninput="renderRespChips()"></div>
+      <div class="field"><label>Valor total (R$)</label><input type="number" id="f-val" placeholder="0,00" step="0.01" oninput="renderRespChips()"></div>
       <div class="field"><label>Parcela (atual / total)</label>
         <div class="parc-row">
           <input type="number" id="f-parc-atual" value="1" min="1">
@@ -330,6 +331,24 @@ body{font-family:-apple-system,'Segoe UI',system-ui,sans-serif;background:var(--
     <div class="modal-btns">
       <button class="btn" onclick="fecharModal()">Fechar</button>
       <button class="btn btn-primary" onclick="copiarCobranca()"><i class="ti ti-copy"></i> Copiar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DEVO A -->
+<div class="modal-backdrop" id="modal-devo" onclick="if(event.target===this)fecharDevo()">
+  <div class="modal-inner">
+    <div class="modal-handle"></div>
+    <h3><i class="ti ti-arrow-back-up" style="color:var(--red)"></i> Devo a alguém</h3>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:1rem">Registre um valor que você deve a uma pessoa. Será abatido do saldo dela.</p>
+    <div class="field"><label>Descrição</label><input type="text" id="dv-desc" placeholder="Ex: Jantar, Empréstimo..."></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="field"><label>Valor (R$)</label><input type="number" id="dv-val" step="0.01" placeholder="0,00" min="0"></div>
+      <div class="field"><label>Devo a quem?</label><input type="text" id="dv-pessoa" placeholder="Nome da pessoa"></div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn" onclick="fecharDevo()">Cancelar</button>
+      <button class="btn btn-danger" onclick="salvarDevo()"><i class="ti ti-check"></i> Registrar</button>
     </div>
   </div>
 </div>
@@ -614,8 +633,13 @@ function editarLancamento(i){
 }
 function fecharForm(){document.getElementById('form-sheet').classList.remove('open');editandoIdx=null;respAtual=[];renderRespChips();}
 function salvarLancamento(){
-  const desc=document.getElementById('f-desc').value.trim(),val=parseFloat(document.getElementById('f-val').value);
-  if(!desc||isNaN(val)||val<=0){toast('Preencha descrição e valor',false);return;}
+  // Auto-adiciona responsável se tiver algo digitado no campo
+  const inp=document.getElementById('resp-input');
+  if(inp.value.trim())addResp(inp.value.trim());
+  const desc=document.getElementById('f-desc').value.trim();
+  const valEl=document.getElementById('f-val');
+  const val=valEl.valueAsNumber||parseFloat(valEl.value.replace(',','.'));
+  if(!desc||isNaN(val)||val===0){toast('Preencha descrição e valor',false);return;}
   if(respAtual.length===0){toast('Adicione pelo menos uma pessoa',false);return;}
   const entry={data:document.getElementById('f-data').value,desc,valor:val,parcAtual:parseInt(document.getElementById('f-parc-atual').value)||1,parcTotal:parseInt(document.getElementById('f-parc-total').value)||1,resp:respAtual.join(','),cartao:document.getElementById('f-cartao').value,sit:''};
   if(editandoIdx!==null){lancamentos[editandoIdx]=entry;toast('Lançamento atualizado!');}
@@ -714,26 +738,51 @@ function renderPessoas(){
   let totalGeral=0;
   nomes.forEach(n=>{
     const rec=recebidos[n]||[];
-    totalGeral+=porPessoa[n].filter((_,i)=>!rec.includes(i+'')).reduce((s,l)=>s+l.parte,0);
+    const saldo=porPessoa[n].filter((_,i)=>!rec.includes(i+'')).reduce((s,l)=>s+l.parte,0);
+    if(saldo>0)totalGeral+=saldo;
   });
   document.getElementById('filtro-total-rec').textContent=nomes.length?`Total a receber: ${fmt(totalGeral)}`:'';
   if(!nomes.length){document.getElementById('lista-pessoas').innerHTML='<p class="empty">Nenhuma pessoa encontrada.</p>';return;}
   let html='';
   nomes.forEach(nome=>{
     const itens=porPessoa[nome],rec=recebidos[nome]||[];
-    const totalPendente=itens.filter((_,i)=>!rec.includes(i+'')).reduce((s,l)=>s+l.parte,0);
+    const itensPendentes=itens.filter((_,i)=>!rec.includes(i+''));
+    const saldo=itensPendentes.reduce((s,l)=>s+l.parte,0);
     const totalTotal=itens.reduce((s,l)=>s+l.parte,0);
     const tudoRecebido=itens.every((_,i)=>rec.includes(i+''));
-    html+=`<div class="pessoa-card"><div class="pessoa-header"><div class="pessoa-nome"><i class="ti ti-user" style="color:var(--blue)"></i>${nome}${tudoRecebido?'<span class="tag-recebido" style="margin-left:6px">✓ Quitado</span>':''}</div><div style="text-align:right"><div style="font-size:18px;font-weight:700;color:${tudoRecebido?'var(--green)':'inherit'}">${fmt(totalPendente)}</div>${totalPendente<totalTotal?`<div style="font-size:11px;color:var(--text3)">de ${fmt(totalTotal)}</div>`:''}<button class="btn btn-sm btn-primary" onclick="abrirCobranca('${nome}')" style="margin-top:5px"><i class="ti ti-message-2"></i> Cobrar</button></div></div>`;
+    const saldoPositivo=saldo>0,saldoZero=Math.abs(saldo)<0.01;
+    const saldoLabel=saldoZero?'Quitado':saldoPositivo?`${nome} te deve`:`Você deve a ${nome}`;
+    const saldoCor=saldoZero?'var(--text2)':saldoPositivo?'var(--green)':'var(--red)';
+    html+=`<div class="pessoa-card">
+      <div class="pessoa-header">
+        <div class="pessoa-nome"><i class="ti ti-user" style="color:var(--blue)"></i>${nome}${tudoRecebido||saldoZero?'<span class="tag-recebido" style="margin-left:6px">✓ Quitado</span>':''}</div>
+        <div style="text-align:right">
+          <div style="font-size:18px;font-weight:700;color:${saldoCor}">${saldoZero?'R$ 0,00':fmt(Math.abs(saldo))}</div>
+          <div style="font-size:11px;color:${saldoCor};margin-top:2px">${saldoLabel}</div>
+          ${saldoPositivo?`<button class="btn btn-sm btn-primary" onclick="abrirCobranca('${nome}')" style="margin-top:5px"><i class="ti ti-message-2"></i> Cobrar</button>`:''}
+        </div>
+      </div>`;
     itens.forEach((l,i)=>{
       const ps=l.parcTotal>1?`<span class="tag-parc" style="margin-right:4px">${l.parcAtual}/${l.parcTotal}</span>`:'';
       const foiRecebido=rec.includes(i+'');
-      html+=`<div class="pessoa-item" style="${foiRecebido?'opacity:.5':''}"><div><div style="font-size:14px;${foiRecebido?'text-decoration:line-through':''}">${l.desc}${l.totalResp>1?` <span style="color:var(--text3);font-size:12px">(/${l.totalResp})</span>`:''}</div><div style="font-size:12px;color:var(--text2);margin-top:2px">${ps}<span class="badge badge-${bc(l.cartao)}">${l.cartao}</span></div></div><div style="display:flex;align-items:center;gap:8px"><div style="font-size:15px;font-weight:600">${fmt(l.parte)}</div><button class="btn btn-sm ${foiRecebido?'btn-primary':''}" onclick="marcarRecebido('${nome}',${i})" title="${foiRecebido?'Desfazer':'Marcar como recebido'}" style="padding:0 8px;height:32px">${foiRecebido?'<i class="ti ti-check"></i>':'<i class="ti ti-check"></i>'}</button></div></div>`;
+      const ehDivida=l.parte<0;
+      html+=`<div class="pessoa-item" style="${foiRecebido?'opacity:.5':''}">
+        <div>
+          <div style="font-size:14px;${foiRecebido?'text-decoration:line-through':''}">${l.desc}${l.totalResp>1?` <span style="color:var(--text3);font-size:12px">(/${l.totalResp})</span>`:''}${ehDivida?` <span style="font-size:11px;color:var(--red);font-weight:600">↩ você deve</span>`:''}</div>
+          <div style="font-size:12px;color:var(--text2);margin-top:2px">${ps}<span class="badge badge-${bc(l.cartao)}">${l.cartao}</span></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="font-size:15px;font-weight:600;color:${ehDivida?'var(--red)':'inherit'}">${ehDivida?'-':''}${fmt(Math.abs(l.parte))}</div>
+          ${!ehDivida?`<button class="btn btn-sm ${foiRecebido?'btn-primary':''}" onclick="marcarRecebido('${nome}',${i})" title="${foiRecebido?'Desfazer':'Marcar como recebido'}" style="padding:0 8px;height:32px"><i class="ti ti-check"></i></button>`:''}
+        </div>
+      </div>`;
     });
-    html+=`<div style="padding:.875rem 1rem;background:var(--bg2);display:flex;justify-content:space-between;align-items:center"><strong>Total pendente: ${fmt(totalPendente)}</strong>${tudoRecebido?'<span class="tag-recebido">✓ Tudo recebido</span>':''}</div></div>`;
+    html+=`<div style="padding:.875rem 1rem;background:var(--bg2);display:flex;justify-content:space-between;align-items:center">
+      <strong style="color:${saldoCor}">${saldoZero?'Quitado':saldoPositivo?`A receber: ${fmt(saldo)}`:`Você deve: ${fmt(Math.abs(saldo))}`}</strong>
+      ${tudoRecebido||saldoZero?'<span class="tag-recebido">✓ Tudo certo</span>':''}
+    </div></div>`;
   });
   document.getElementById('lista-pessoas').innerHTML=html;
-  // Banner próximo mês
   verificarBannerProximoMes();
 }
 function abrirCobranca(nome){
@@ -741,10 +790,10 @@ function abrirCobranca(nome){
   const recebidos=getRecebidos();
   lancamentos.forEach(l=>{const rs=splitResp(l.resp),parte=l.valor/rs.length;rs.forEach(r=>{if(isEu(r))return;if(!porPessoa[r])porPessoa[r]=[];porPessoa[r].push({...l,parte});});});
   const itens=porPessoa[nome]||[],rec=recebidos[nome]||[];
-  const itensPendentes=itens.filter((_,i)=>!rec.includes(i+''));
-  const total=itensPendentes.reduce((s,l)=>s+l.parte,0);
+  const itensPendentes=itens.filter((_,i)=>!rec.includes(i+'')).filter(l=>l.parte>0);
+  const saldo=itensPendentes.reduce((s,l)=>s+l.parte,0);
   const linhas=itensPendentes.map(l=>{const parc=l.parcTotal>1?` (${l.parcAtual}/${l.parcTotal})`:'';return`- ${l.desc}${parc}: ${fmt(l.parte)}`;}).join('\n');
-  document.getElementById('modal-texto').value=`Oi ${nome}!\n\nPassando para acertar as despesas de ${nomeMes}:\n\n${linhas}\n\nTotal: ${fmt(total)}\n\nQualquer dúvida é só falar!`;
+  document.getElementById('modal-texto').value=`Oi ${nome}!\n\nPassando para acertar as despesas de ${nomeMes}:\n\n${linhas}\n\nTotal: ${fmt(saldo)}\n\nQualquer dúvida é só falar!`;
   document.getElementById('modal-cobranca').classList.add('open');
 }
 function fecharModal(){document.getElementById('modal-cobranca').classList.remove('open');}
