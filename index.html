@@ -204,12 +204,7 @@ body{font-family:-apple-system,'Segoe UI',system-ui,sans-serif;background:var(--
     <div class="topbar-avatar" id="t-avatar" onclick="setNav('config')"></div>
     <h1 id="t-nome"></h1>
   </div>
-  <select class="mes-pill" id="selMes" onchange="trocarMes()">
-    <option value="06.2026">Jun 2026</option>
-    <option value="07.2026">Jul 2026</option><option value="08.2026">Ago 2026</option>
-    <option value="09.2026">Set 2026</option><option value="10.2026">Out 2026</option>
-    <option value="11.2026">Nov 2026</option><option value="12.2026">Dez 2026</option>
-  </select>
+  <select class="mes-pill" id="selMes" onchange="trocarMes()"></select>
 </div>
 <div class="main">
 
@@ -538,8 +533,29 @@ const splitResp=s=>s?s.split(',').map(x=>x.trim()).filter(Boolean):['Eu'];
 
 function toast(msg,ok=true){const t=document.getElementById('toast');t.style.background=ok?'var(--text)':'var(--red)';document.getElementById('toast-msg').textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
 
+function popularMeses(){
+  const sel=document.getElementById('selMes');
+  const hoje=new Date();
+  const mesAtual=hoje.getMonth()+1, anoAtual=hoje.getFullYear();
+  const mesesNomes=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  sel.innerHTML='';
+  // 3 meses anteriores + mês atual + 5 meses futuros
+  for(let i=-3;i<=5;i++){
+    let m=mesAtual+i, a=anoAtual;
+    if(m<1){m+=12;a--;}if(m>12){m-=12;a++;}
+    const val=`${String(m).padStart(2,'0')}.${a}`;
+    const opt=document.createElement('option');
+    opt.value=val;opt.textContent=`${mesesNomes[m-1]} ${a}`;
+    if(i===0)opt.selected=true;
+    sel.appendChild(opt);
+  }
+}
+
 // LOGIN
 function selPerfil(id){perfilSel=id;document.querySelectorAll('.lp-btn').forEach(b=>b.classList.remove('selected'));document.getElementById('lp-'+id).classList.add('selected');document.getElementById('login-senha').focus();document.getElementById('login-erro').style.display='none';}
+
+// Inicializar meses ao carregar
+popularMeses();
 async function fazerLogin(){
   if(!perfilSel){toast('Selecione um perfil',false);return;}
   const s=document.getElementById('login-senha').value;
@@ -780,12 +796,14 @@ function renderLista(){
 
 // FORM (novo / editar)
 function abrirForm(){
-  editandoIdx=null;respAtual=[];renderRespChips();
+  editandoIdx=null;respAtual=['Eu'];renderRespChips();
   document.getElementById('form-title').textContent='Nova despesa';
   document.getElementById('form-btn-label').textContent='Adicionar';
   document.getElementById('f-desc').value='';document.getElementById('f-val').value='';
   document.getElementById('f-parc-atual').value='1';document.getElementById('f-parc-total').value='1';
-  document.getElementById('f-cartao').value='NUBANK';
+  document.getElementById('f-cartao').value=ORDEM[0]||'DEBITO';
+  // Data padrão = hoje
+  document.getElementById('f-data').value=new Date().toISOString().slice(0,10);
   document.getElementById('form-sheet').classList.add('open');
   document.getElementById('f-desc').focus();
 }
@@ -794,7 +812,7 @@ function editarLancamento(i){
   respAtual=splitResp(l.resp);renderRespChips();
   document.getElementById('form-title').textContent='Editar despesa';
   document.getElementById('form-btn-label').textContent='Salvar';
-  document.getElementById('f-data').value=l.data||'';
+  document.getElementById('f-data').value=l.data||new Date().toISOString().slice(0,10);
   document.getElementById('f-desc').value=l.desc;
   document.getElementById('f-val').value=l.valor;
   document.getElementById('f-parc-atual').value=l.parcAtual||1;
@@ -813,9 +831,38 @@ function salvarLancamento(){
   if(!desc||isNaN(val)||val===0){toast('Preencha descrição e valor',false);return;}
   if(respAtual.length===0){toast('Adicione pelo menos uma pessoa',false);return;}
   const entry={data:document.getElementById('f-data').value,desc,valor:val,parcAtual:parseInt(document.getElementById('f-parc-atual').value)||1,parcTotal:parseInt(document.getElementById('f-parc-total').value)||1,resp:respAtual.join(','),cartao:document.getElementById('f-cartao').value,sit:''};
-  if(editandoIdx!==null){lancamentos[editandoIdx]=entry;toast('Lançamento atualizado!');}
-  else{lancamentos.push(entry);toast('Lançamento adicionado!');}
-  fecharForm();salvarDados();renderTudo();
+  
+  // Determinar o mês pelo campo data, não pelo seletor
+  const dataDigitada=entry.data;
+  let mesDestino=document.getElementById('selMes').value;
+  if(dataDigitada){
+    const d=new Date(dataDigitada+'T12:00:00');
+    mesDestino=`${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;
+  }
+  const mesSel=document.getElementById('selMes').value;
+
+  if(editandoIdx!==null){
+    lancamentos[editandoIdx]=entry;
+    fecharForm();salvarDados();renderTudo();
+    toast('Lançamento atualizado!');
+  } else {
+    if(mesDestino!==mesSel){
+      // Salvar no mês correto da data
+      const local=localStorage.getItem(sk('dados'));
+      const dadosAll=local?JSON.parse(local):{};
+      if(!dadosAll[mesDestino])dadosAll[mesDestino]=[];
+      dadosAll[mesDestino].push(entry);
+      fbSalvar('dados',dadosAll);
+      const opt=document.getElementById('selMes').querySelector(`option[value="${mesDestino}"]`);
+      if(opt){document.getElementById('selMes').value=mesDestino;trocarMes();}
+      toast(`Salvo em ${NOMES_MES[new Date(dataDigitada+'T12:00:00').getMonth()+1]}!`);
+      fecharForm();
+    } else {
+      lancamentos.push(entry);
+      fecharForm();salvarDados();renderTudo();
+      toast('Lançamento adicionado!');
+    }
+  }
 }
 
 // PASSAR PARA PRÓXIMO MÊS (aumenta parcela)
