@@ -160,8 +160,8 @@ body{font-family:-apple-system,'Segoe UI',system-ui,sans-serif;background:var(--
   <div class="login-sub">Selecione seu perfil e entre com sua senha</div>
   <div class="login-profiles">
     <div class="lp-btn" id="lp-voce" onclick="selPerfil('voce')">
-      <div class="lp-avatar" style="background:#185FA5">V</div>
-      <div class="lp-name">Você</div>
+      <div class="lp-avatar" style="background:#185FA5">N</div>
+      <div class="lp-name">Nath</div>
     </div>
     <div class="lp-btn" id="lp-jhones" onclick="selPerfil('jhones')">
       <div class="lp-avatar" style="background:#2a7a3b">J</div>
@@ -262,6 +262,16 @@ body{font-family:-apple-system,'Segoe UI',system-ui,sans-serif;background:var(--
         <div class="field"><label>Nova senha</label><input type="password" id="cfg-nova" placeholder="Nova senha"></div>
         <div style="font-size:13px;margin-bottom:.75rem;display:none" id="cfg-msg"></div>
         <button class="btn btn-primary btn-full" onclick="alterarSenha()"><i class="ti ti-check"></i> Salvar senha</button>
+      </div>
+    </div>
+    <div class="config-section"><h3>Formas de pagamento</h3>
+      <div class="panel">
+        <p style="font-size:13px;color:var(--text2);margin-bottom:.875rem">Cartões e formas de pagamento disponíveis para este perfil.</p>
+        <div id="cfg-cartoes-lista" style="margin-bottom:.875rem"></div>
+        <div style="display:flex;gap:8px">
+          <input type="text" id="cfg-novo-cartao" placeholder="Nome do cartão..." style="flex:1;height:44px;border:1.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);font-size:15px;padding:0 12px;outline:none;font-family:inherit">
+          <button class="btn btn-primary" onclick="adicionarCartao()"><i class="ti ti-plus"></i> Adicionar</button>
+        </div>
       </div>
     </div>
     <div class="config-section"><h3>Exportar</h3>
@@ -456,7 +466,7 @@ const JUNHO_2026 = [
 ];
 
 const PERFIS = {
-  voce:{nome:'Você',cor:'#185FA5',ini:'V',temBeneficio:true,renda:{sal:2955.65,ben:500,bon:0,mae:false},
+  voce:{nome:'Nath',cor:'#185FA5',ini:'N',temBeneficio:true,renda:{sal:2955.65,ben:500,bon:0,mae:false},
     recorrentes:[
       {desc:'Apê',cartao:'FIXO',resp:'Eu',valor:1590.72,parcAtual:0,parcTotal:0,tipo:'Fixo'},
       {desc:'Claro',cartao:'FIXO',resp:'Eu',valor:39.92,parcAtual:0,parcTotal:0,tipo:'Fixo'},
@@ -479,7 +489,12 @@ const PERFIS = {
   jhones:{nome:'Jhones',cor:'#2a7a3b',ini:'J',temBeneficio:false,renda:{sal:0,ben:0,bon:0,mae:false},recorrentes:[]}
 };
 
-const ORDEM=['FIXO','NUBANK','PORTO BANK','PICPAY','DEBITO'];
+const CARTOES_PADRAO = {
+  voce: ['FIXO','NUBANK','PORTO BANK','PICPAY','DEBITO'],
+  jhones: ['FIXO','DEBITO']
+};
+const CARTOES_NOMES = {'FIXO':'Fixo','NUBANK':'Nubank','PORTO BANK':'Porto Bank','PICPAY':'PicPay','DEBITO':'Débito/Dinheiro'};
+let ORDEM=['FIXO','NUBANK','PORTO BANK','PICPAY','DEBITO'];
 const NOMES_MES={1:'Janeiro',2:'Fevereiro',3:'Março',4:'Abril',5:'Maio',6:'Junho',7:'Julho',8:'Agosto',9:'Setembro',10:'Outubro',11:'Novembro',12:'Dezembro'};
 let perfilAtivo=null,perfilSel=null;
 let RECORRENTES=[],lancamentos=[],recSel=new Set(),respAtual=[];
@@ -506,7 +521,7 @@ function fazerLogin(){
   document.getElementById('t-avatar').style.background=p.cor;document.getElementById('t-avatar').textContent=p.ini;
   document.getElementById('t-nome').textContent=p.nome;document.getElementById('cfg-nome').textContent=p.nome;
   document.getElementById('toggle-mae-wrap').style.display=p.temBeneficio?'block':'none';
-  carregarRenda();carregarRecorrentes();carregarDados();gerarParcelasSeNecessario();renderTudo();
+  carregarRenda();carregarRecorrentes();carregarCartoes();carregarDados();gerarParcelasSeNecessario();atualizarSelects();renderTudo();
 }
 function sair(){perfilAtivo=null;perfilSel=null;document.getElementById('app').style.display='none';document.getElementById('login-screen').style.display='flex';document.querySelectorAll('.lp-btn').forEach(b=>b.classList.remove('selected'));setNav('inicio');}
 function alterarSenha(){
@@ -517,7 +532,46 @@ function alterarSenha(){
   msg.style.display='block';msg.style.color='var(--green)';msg.textContent='Senha alterada!';toast('Senha alterada!');
 }
 
-// STORAGE
+// CARTÕES
+function skCartoes(){return`cf_cartoes_${perfilAtivo}`;}
+function carregarCartoes(){
+  const saved=JSON.parse(localStorage.getItem(skCartoes())||'null');
+  ORDEM=saved||JSON.parse(JSON.stringify(CARTOES_PADRAO[perfilAtivo]||['FIXO','DEBITO']));
+}
+function salvarCartoes(){localStorage.setItem(skCartoes(),JSON.stringify(ORDEM));}
+function renderCartoesConfig(){
+  const el=document.getElementById('cfg-cartoes-lista');if(!el)return;
+  if(!ORDEM.length){el.innerHTML='<p style="font-size:13px;color:var(--text2)">Nenhum cartão cadastrado.</p>';return;}
+  el.innerHTML=ORDEM.map((c,i)=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:.625rem .75rem;background:var(--bg2);border-radius:var(--radius);margin-bottom:6px;border:1px solid var(--border)">
+      <span style="font-size:14px;font-weight:500"><span class="badge badge-${bc(c)}" style="margin-right:8px">${c}</span>${CARTOES_NOMES[c]||c}</span>
+      ${ORDEM.length>1?`<button class="btn-action danger" style="width:32px;height:32px;flex:none" onclick="removerCartao(${i})"><i class="ti ti-trash"></i></button>`:''}
+    </div>`).join('');
+}
+function adicionarCartao(){
+  const inp=document.getElementById('cfg-novo-cartao');
+  const nome=inp.value.trim().toUpperCase();
+  if(!nome){toast('Digite o nome do cartão',false);return;}
+  if(ORDEM.includes(nome)){toast('Cartão já existe',false);return;}
+  ORDEM.push(nome);
+  // Registrar nome amigável
+  if(!CARTOES_NOMES[nome])CARTOES_NOMES[nome]=inp.value.trim();
+  salvarCartoes();renderCartoesConfig();atualizarSelects();
+  inp.value='';toast('Cartão adicionado!');
+}
+function removerCartao(i){
+  if(!confirm(`Remover "${ORDEM[i]}"?`))return;
+  ORDEM.splice(i,1);salvarCartoes();renderCartoesConfig();atualizarSelects();toast('Cartão removido.');
+}
+function atualizarSelects(){
+  ['f-cartao','nr-cartao','pp-cartao'].forEach(id=>{
+    const el=document.getElementById(id);if(!el)return;
+    const val=el.value;
+    el.innerHTML=ORDEM.map(c=>`<option value="${c}">${CARTOES_NOMES[c]||c}</option>`).join('');
+    if(ORDEM.includes(val))el.value=val;
+  });
+}
+
 const sk=t=>`cf_${t}_${perfilAtivo}`;
 function salvarDados(){const m=document.getElementById('selMes').value,d=JSON.parse(localStorage.getItem(sk('dados'))||'{}');d[m]=lancamentos;localStorage.setItem(sk('dados'),JSON.stringify(d));}
 function carregarDados(){
@@ -551,7 +605,7 @@ function setNav(id){
   document.getElementById('sec-'+id).classList.add('active');
   const nb=document.getElementById('nav-'+id);if(nb)nb.classList.add('active');
   document.getElementById('fab-add').style.display=id==='lancar'?'flex':'none';
-  if(id==='inicio')renderInicio();if(id==='pessoas'){renderPessoas();verificarBannerProximoMes();}if(id==='recorrentes')renderRecorrentes();
+  if(id==='inicio')renderInicio();if(id==='pessoas'){renderPessoas();verificarBannerProximoMes();}if(id==='recorrentes')renderRecorrentes();if(id==='config')renderCartoesConfig();
   window.scrollTo(0,0);
 }
 function trocarMes(){carregarDados();gerarParcelasSeNecessario();renderTudo();}
@@ -809,14 +863,43 @@ function abrirCobranca(nome){
   const recebidos=getRecebidos();
   lancamentos.forEach(l=>{const rs=splitResp(l.resp),parte=l.valor/rs.length;rs.forEach(r=>{if(isEu(r))return;if(!porPessoa[r])porPessoa[r]=[];porPessoa[r].push({...l,parte});});});
   const itens=porPessoa[nome]||[],rec=recebidos[nome]||[];
-  const itensPendentes=itens.filter((_,i)=>!rec.includes(i+'')).filter(l=>l.parte>0);
-  const saldo=itensPendentes.reduce((s,l)=>s+l.parte,0);
-  const linhas=itensPendentes.map(l=>{const parc=l.parcTotal>1?` (${l.parcAtual}/${l.parcTotal})`:'';return`- ${l.desc}${parc}: ${fmt(l.parte)}`;}).join('\n');
-  document.getElementById('modal-texto').value=`Oi ${nome}!\n\nPassando para acertar as despesas de ${nomeMes}:\n\n${linhas}\n\nTotal: ${fmt(saldo)}\n\nQualquer dúvida é só falar!`;
+  const itensPendentes=itens.filter((_,i)=>!rec.includes(i+''));
+  const itensElaDeve=itensPendentes.filter(l=>l.parte>0);
+  const itensEuDevo=itensPendentes.filter(l=>l.parte<0);
+  const totalElaDeve=itensElaDeve.reduce((s,l)=>s+l.parte,0);
+  const totalEuDevo=itensEuDevo.reduce((s,l)=>s+Math.abs(l.parte),0);
+  const saldoFinal=totalElaDeve-totalEuDevo;
+  const linhasElaDeve=itensElaDeve.map(l=>{const parc=l.parcTotal>1?` (${l.parcAtual}/${l.parcTotal})`:'';return`- ${l.desc}${parc}: ${fmt(l.parte)}`;}).join('\n');
+  const linhasEuDevo=itensEuDevo.map(l=>`- ${l.desc}: - ${fmt(Math.abs(l.parte))}`).join('\n');
+  let msg=`Oi ${nome}!\n\nPassando para acertar as despesas de ${nomeMes}:\n\n${linhasElaDeve}`;
+  if(itensEuDevo.length>0)msg+=`\n\nAbatimentos (eu devo a você):\n${linhasEuDevo}`;
+  msg+=`\n\nTotal líquido: ${fmt(saldoFinal)}\n\nQualquer dúvida é só falar!`;
+  document.getElementById('modal-texto').value=msg;
   document.getElementById('modal-cobranca').classList.add('open');
 }
 function fecharModal(){document.getElementById('modal-cobranca').classList.remove('open');}
 function copiarCobranca(){navigator.clipboard.writeText(document.getElementById('modal-texto').value).then(()=>toast('Copiado!')).catch(()=>toast('Erro',false));}
+
+// EU DEVO A ALGUÉM (botão do topo)
+function abrirDevo(){
+  document.getElementById('dv-desc').value='';
+  document.getElementById('dv-val').value='';
+  document.getElementById('dv-pessoa').value='';
+  document.getElementById('modal-devo').classList.add('open');
+  setTimeout(()=>document.getElementById('dv-desc').focus(),100);
+}
+function fecharDevo(){document.getElementById('modal-devo').classList.remove('open');}
+function salvarDevo(){
+  const desc=document.getElementById('dv-desc').value.trim();
+  const val=parseFloat(document.getElementById('dv-val').value);
+  const pessoa=document.getElementById('dv-pessoa').value.trim();
+  if(!desc||isNaN(val)||val<=0){toast('Preencha descrição e valor',false);return;}
+  if(!pessoa){toast('Informe o nome da pessoa',false);return;}
+  const hoje=new Date().toISOString().slice(0,10);
+  lancamentos.push({data:hoje,desc,valor:-val,parcAtual:1,parcTotal:1,resp:pessoa,cartao:'DEBITO',sit:'Eu devo'});
+  fecharDevo();salvarDados();renderTudo();renderPessoas();
+  toast(`Registrado! Você deve ${fmt(val)} a ${pessoa}`);
+}
 
 // EU DEVO A ALGUÉM
 function abrirEuDevo(nome){
