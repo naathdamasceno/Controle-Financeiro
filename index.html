@@ -656,24 +656,30 @@ function ativarSync(){
       if(!snap.exists()) return;
       const val = snap.val();
       localStorage.setItem(sk(chave), JSON.stringify(val));
-      if(chave==='dados'){ const m=document.getElementById('selMes').value; lancamentos=val[m]||[]; renderTudo(); }
+      if(chave==='dados'){
+        todosOsDados = val;
+        const m=document.getElementById('selMes').value;
+        lancamentos=val[m]?JSON.parse(JSON.stringify(val[m])):[];
+        renderTudo();
+      }
       if(chave==='renda'){ const r=val; document.getElementById('r-sal').value=r.sal; document.getElementById('r-ben').value=r.ben; document.getElementById('r-bon').value=r.bon; document.getElementById('r-mae').checked=r.mae; renderMetricas(); }
       if(chave==='cartoes'){ ORDEM=val; atualizarSelects(); renderCartoesConfig(); }
     });
   });
 }
 
+let todosOsDados = {}; // cache global de todos os meses
+
 function salvarDados(){
   const m=document.getElementById('selMes').value;
-  const local = localStorage.getItem(sk('dados'));
-  const d = local ? JSON.parse(local) : {};
-  d[m]=lancamentos;
-  fbSalvar('dados', d);
+  todosOsDados[m]=lancamentos;
+  fbSalvar('dados', todosOsDados);
 }
 async function carregarDados(){
   const m=document.getElementById('selMes').value;
   const d = await fbCarregar('dados') || {};
-  if(d[m]){ lancamentos=d[m]; }
+  todosOsDados = d;
+  if(d[m]){ lancamentos=JSON.parse(JSON.stringify(d[m])); }
   else if(m==='06.2026'&&perfilAtivo==='voce'){ lancamentos=JSON.parse(JSON.stringify(JUNHO_2026)); salvarDados(); }
   else { lancamentos=[]; }
 }
@@ -714,7 +720,12 @@ function setNav(id){
   if(id==='inicio')renderInicio();if(id==='pessoas'){renderPessoas();verificarBannerProximoMes();}if(id==='recorrentes')renderRecorrentes();if(id==='config')renderCartoesConfig();
   window.scrollTo(0,0);
 }
-function trocarMes(){carregarDados();gerarParcelasSeNecessario();renderTudo();}
+function trocarMes(){
+  const m=document.getElementById('selMes').value;
+  if(todosOsDados[m]){ lancamentos=JSON.parse(JSON.stringify(todosOsDados[m])); }
+  else { lancamentos=[]; }
+  gerarParcelasSeNecessario();renderTudo();
+}
 function renderTudo(){renderLista();renderMetricas();renderInicio();}
 
 function gerarParcelasSeNecessario(){
@@ -723,8 +734,7 @@ function gerarParcelasSeNecessario(){
   const [mm,aa]=mesSel.split('.').map(Number);
   let amm=mm-1,aaa=aa;if(amm<1){amm=12;aaa--;}
   const mesAnterior=`${String(amm).padStart(2,'0')}.${aaa}`;
-  const dadosAll=JSON.parse(localStorage.getItem(sk('dados'))||'{}');
-  const lancAnt=dadosAll[mesAnterior];
+  const lancAnt=todosOsDados[mesAnterior];
   if(!lancAnt||!lancAnt.length)return;
   // Se o mês atual já tem dados, não sobrescreve
   if(lancamentos.length>0)return;
@@ -848,11 +858,9 @@ function salvarLancamento(){
   } else {
     if(mesDestino!==mesSel){
       // Salvar no mês correto da data
-      const local=localStorage.getItem(sk('dados'));
-      const dadosAll=local?JSON.parse(local):{};
-      if(!dadosAll[mesDestino])dadosAll[mesDestino]=[];
-      dadosAll[mesDestino].push(entry);
-      fbSalvar('dados',dadosAll);
+      if(!todosOsDados[mesDestino])todosOsDados[mesDestino]=[];
+      todosOsDados[mesDestino].push(entry);
+      fbSalvar('dados',todosOsDados);
       const opt=document.getElementById('selMes').querySelector(`option[value="${mesDestino}"]`);
       if(opt){document.getElementById('selMes').value=mesDestino;trocarMes();}
       toast(`Salvo em ${NOMES_MES[new Date(dataDigitada+'T12:00:00').getMonth()+1]}!`);
@@ -880,10 +888,10 @@ function passarProximoMes(i){
   // Aumenta a parcela para o próximo mês
   const novaParc=l.parcTotal>1?l.parcAtual+1:l.parcAtual;
   const copia={...l,parcAtual:novaParc};
-  const dadosAll=JSON.parse(localStorage.getItem(sk('dados'))||'{}');
-  if(!dadosAll[proximoMes])dadosAll[proximoMes]=[];
-  if(!dadosAll[proximoMes].find(x=>x.desc===l.desc&&x.cartao===l.cartao&&x.resp===l.resp)){
-    dadosAll[proximoMes].push(copia);localStorage.setItem(sk('dados'),JSON.stringify(dadosAll));
+  if(!todosOsDados[proximoMes])todosOsDados[proximoMes]=[];
+  if(!todosOsDados[proximoMes].find(x=>x.desc===l.desc&&x.cartao===l.cartao&&x.resp===l.resp)){
+    todosOsDados[proximoMes].push(copia);
+    fbSalvar('dados',todosOsDados);
     toast(`Copiado para ${NOMES_MES[proximoMm]}! (${novaParc}/${l.parcTotal})`);
   } else {toast('Já existe neste mês',false);}
 }
@@ -1139,8 +1147,7 @@ function verificarBannerProximoMes(){
   const proximoMes=`${String(pmm).padStart(2,'0')}.${paa}`;
   const opt=document.getElementById('selMes').querySelector(`option[value="${proximoMes}"]`);
   if(!opt){banner.style.display='none';return;}
-  const dadosAll=JSON.parse(localStorage.getItem(sk('dados'))||'{}');
-  const jaTemProximo=dadosAll[proximoMes]&&dadosAll[proximoMes].length>0;
+  const jaTemProximo=todosOsDados[proximoMes]&&todosOsDados[proximoMes].length>0;
   const temParcelas=lancamentos.some(l=>l.parcTotal>1&&l.parcAtual<l.parcTotal);
   if(!jaTemProximo&&temParcelas){
     banner.style.display='block';
@@ -1152,23 +1159,16 @@ function gerarProximoMes(){
   const [mm,aa]=mesSel.split('.').map(Number);
   let pmm=mm+1,paa=aa;if(pmm>12){pmm=1;paa++;}
   const proximoMes=`${String(pmm).padStart(2,'0')}.${paa}`;
-  const dadosAll=JSON.parse(localStorage.getItem(sk('dados'))||'{}');
-  if(!dadosAll[proximoMes])dadosAll[proximoMes]=[];
+  if(!todosOsDados[proximoMes])todosOsDados[proximoMes]=[];
   let count=0;
   const data1=`${paa}-${String(pmm).padStart(2,'0')}-01`;
   lancamentos.forEach(l=>{
-    // Só copia se ainda tem parcela a vencer (parcAtual < parcTotal)
     if(l.parcTotal>1&&l.parcAtual<l.parcTotal){
-      const jaExiste=dadosAll[proximoMes].find(x=>x.desc===l.desc&&x.cartao===l.cartao&&x.resp===l.resp);
-      if(!jaExiste){
-        // Aumenta a parcela
-        dadosAll[proximoMes].push({...l,data:data1,parcAtual:l.parcAtual+1,sit:''});
-        count++;
-      }
+      const jaExiste=todosOsDados[proximoMes].find(x=>x.desc===l.desc&&x.cartao===l.cartao&&x.resp===l.resp);
+      if(!jaExiste){todosOsDados[proximoMes].push({...l,data:data1,parcAtual:l.parcAtual+1,sit:''});count++;}
     }
-    // Se parcAtual === parcTotal: última parcela, não copia para o próximo mês
   });
-  localStorage.setItem(sk('dados'),JSON.stringify(dadosAll));
+  fbSalvar('dados',todosOsDados);
   toast(count>0?`${count} parcela(s) gerada(s) para ${NOMES_MES[pmm]}!`:'Nada novo para gerar.');
   document.getElementById('banner-proximo-mes').style.display='none';
 }
