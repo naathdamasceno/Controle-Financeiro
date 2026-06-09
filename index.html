@@ -8,29 +8,27 @@
 <title>Controle Financeiro</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getDatabase, ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyBtZ1e0mLBYVXJ9nNmFP__hymFaiWyqqvI",
-  authDomain: "controle-financeiro-a83f2.firebaseapp.com",
-  databaseURL: "https://controle-financeiro-a83f2-default-rtdb.firebaseio.com",
-  projectId: "controle-financeiro-a83f2",
-  storageBucket: "controle-financeiro-a83f2.firebasestorage.app",
-  messagingSenderId: "721669272387",
-  appId: "1:721669272387:web:b13c4f20983e4c475a75f6"
-};
-
-const firebaseApp = initializeApp(firebaseConfig);
-const db = getDatabase(firebaseApp);
-window.fbDb = db;
-window.fbRef = ref;
-window.fbSet = set;
-window.fbGet = get;
-window.fbOnValue = onValue;
-window.firebaseReady = true;
-document.dispatchEvent(new Event('firebaseReady'));
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+try {
+  const firebaseConfig = {
+    apiKey: "AIzaSyBtZ1e0mLBYVXJ9nNmFP__hymFaiWyqqvI",
+    authDomain: "controle-financeiro-a83f2.firebaseapp.com",
+    databaseURL: "https://controle-financeiro-a83f2-default-rtdb.firebaseio.com",
+    projectId: "controle-financeiro-a83f2",
+    storageBucket: "controle-financeiro-a83f2.firebasestorage.app",
+    messagingSenderId: "721669272387",
+    appId: "1:721669272387:web:b13c4f20983e4c475a75f6"
+  };
+  firebase.initializeApp(firebaseConfig);
+  window.fbDb = firebase.database();
+  window.firebaseReady = true;
+} catch(e) {
+  console.warn('Firebase não disponível, usando modo offline:', e);
+  window.fbDb = null;
+  window.firebaseReady = false;
+}
 </script>
 <style>
 :root{--bg:#fff;--bg2:#f5f5f4;--bg3:#eeede9;--text:#1a1a18;--text2:#6b6b67;--text3:#9b9b96;--border:rgba(0,0,0,0.1);--border2:rgba(0,0,0,0.2);--radius:10px;--radius-lg:14px;--green:#3B6D11;--red:#A32D2D;--blue:#185FA5;--blue-bg:#e6f1fb;--navbar-h:64px;}
@@ -567,15 +565,47 @@ async function fazerLogin(){
   document.getElementById('t-nome').textContent=p.nome;document.getElementById('cfg-nome').textContent=p.nome;
   document.getElementById('toggle-mae-wrap').style.display=p.temBeneficio?'block':'none';
   toast('Carregando dados...', true);
-  await carregarRenda();await carregarRecorrentes();await carregarCartoes();await carregarDados();
-  // Sincronizar recebidos e cartoes_pagos do Firebase
-  const recFB = await fbCarregar('recebidos');
-  if(recFB) localStorage.setItem(sk('recebidos'), JSON.stringify(recFB));
-  const cpFB = await fbCarregar('cartoes_pagos');
-  if(cpFB) localStorage.setItem(sk('cartoes_pagos'), JSON.stringify(cpFB));
+  // Carrega TUDO do Firebase de uma vez
+  try {
+    const snap = await window.fbDb.ref(`usuarios/${perfilAtivo}`).get();
+    if(snap.exists()){
+      const tudo = snap.val();
+      ['dados','renda','recorrentes','cartoes','recebidos','cartoes_pagos'].forEach(k=>{
+        if(tudo[k]!==undefined) localStorage.setItem(sk(k), JSON.stringify(tudo[k]));
+      });
+      if(tudo.dados){ todosOsDados=tudo.dados; }
+      if(tudo.renda){ const r=tudo.renda; document.getElementById('r-sal').value=r.sal||0; document.getElementById('r-ben').value=r.ben||0; document.getElementById('r-bon').value=r.bon||0; document.getElementById('r-mae').checked=r.mae||false; }
+      if(tudo.cartoes){ ORDEM=tudo.cartoes; }
+      if(tudo.recorrentes){ RECORRENTES=tudo.recorrentes; recSel=new Set(RECORRENTES.map((_,i)=>i)); }
+    }
+  } catch(e){ console.warn('Firebase load error:', e); }
+  // Fallback localStorage
+  const m=document.getElementById('selMes').value;
+  if(!todosOsDados||Object.keys(todosOsDados).length===0){
+    const local=localStorage.getItem(sk('dados'));
+    if(local) todosOsDados=JSON.parse(local);
+  }
+  lancamentos=todosOsDados[m]?JSON.parse(JSON.stringify(todosOsDados[m])):[];
+  if(!ORDEM||!ORDEM.length){ const lc=localStorage.getItem(sk('cartoes')); ORDEM=lc?JSON.parse(lc):JSON.parse(JSON.stringify(CARTOES_PADRAO[perfilAtivo]||['FIXO','DEBITO'])); }
   gerarParcelasSeNecessario();atualizarSelects();renderTudo();renderPessoas();
   ativarSync();
   toast('Dados sincronizados! ☁️', true);
+}
+
+function ativarSync(){
+  if(!window.fbDb) return;
+  window.fbDb.ref(`usuarios/${perfilAtivo}`).on('value', snap => {
+    if(!snap.exists()||salvandoAgora) return;
+    const tudo = snap.val();
+    const m=document.getElementById('selMes').value;
+    if(tudo.dados){ todosOsDados=tudo.dados; lancamentos=tudo.dados[m]?JSON.parse(JSON.stringify(tudo.dados[m])): []; localStorage.setItem(sk('dados'),JSON.stringify(tudo.dados)); }
+    if(tudo.recebidos) localStorage.setItem(sk('recebidos'),JSON.stringify(tudo.recebidos));
+    if(tudo.cartoes_pagos) localStorage.setItem(sk('cartoes_pagos'),JSON.stringify(tudo.cartoes_pagos));
+    if(tudo.renda){ const r=tudo.renda; document.getElementById('r-sal').value=r.sal||0; document.getElementById('r-ben').value=r.ben||0; document.getElementById('r-bon').value=r.bon||0; document.getElementById('r-mae').checked=r.mae||false; }
+    if(tudo.cartoes){ ORDEM=tudo.cartoes; atualizarSelects(); }
+    renderTudo();renderPessoas();
+    toast('☁️ Sincronizado!', true);
+  });
 }
 function sair(){perfilAtivo=null;perfilSel=null;document.getElementById('app').style.display='none';document.getElementById('login-screen').style.display='flex';document.querySelectorAll('.lp-btn').forEach(b=>b.classList.remove('selected'));setNav('inicio');}
 function alterarSenha(){
@@ -636,14 +666,14 @@ async function fbSalvar(chave, valor){
   if(!window.fbDb) return;
   try {
     salvandoAgora = true;
-    await window.fbSet(window.fbRef(window.fbDb, fbPath(chave)), valor);
-    setTimeout(()=>{salvandoAgora=false;}, 1000);
+    await window.fbDb.ref(`usuarios/${perfilAtivo}/${chave}`).set(valor);
+    setTimeout(()=>{salvandoAgora=false;}, 1500);
   } catch(e){ console.warn('FB save err', e); salvandoAgora=false; }
 }
 async function fbCarregar(chave){
   if(window.fbDb){
     try {
-      const snap = await window.fbGet(window.fbRef(window.fbDb, fbPath(chave)));
+      const snap = await window.fbDb.ref(`usuarios/${perfilAtivo}/${chave}`).get();
       if(snap.exists()){
         const val = snap.val();
         localStorage.setItem(sk(chave), JSON.stringify(val));
@@ -653,31 +683,6 @@ async function fbCarregar(chave){
   }
   const local = localStorage.getItem(sk(chave));
   return local ? JSON.parse(local) : null;
-}
-
-// SINCRONIZAÇÃO EM TEMPO REAL
-let fbListeners = {};
-function ativarSync(){
-  if(!window.fbDb) return;
-  ['dados','renda','recorrentes','cartoes','recebidos','cartoes_pagos'].forEach(chave=>{
-    if(fbListeners[chave]) return;
-    let primeiraVez = true;
-    fbListeners[chave] = window.fbOnValue(window.fbRef(window.fbDb, fbPath(chave)), snap => {
-      if(!snap.exists()) return;
-      const ehPrimeiro = primeiraVez;
-      if(primeiraVez) primeiraVez=false;
-      // Para dados/renda/cartoes: ignorar primeiro disparo (já carregado no login)
-      if(ehPrimeiro && !['recebidos','cartoes_pagos'].includes(chave)) return;
-      if(salvandoAgora) return;
-      const val = snap.val();
-      localStorage.setItem(sk(chave), JSON.stringify(val));
-      if(chave==='dados'){todosOsDados=val;const m=document.getElementById('selMes').value;lancamentos=val[m]?JSON.parse(JSON.stringify(val[m])):[];renderTudo();toast('☁️ Sincronizado!',true);}
-      if(chave==='renda'){const r=val;document.getElementById('r-sal').value=r.sal;document.getElementById('r-ben').value=r.ben;document.getElementById('r-bon').value=r.bon;document.getElementById('r-mae').checked=r.mae;renderMetricas();}
-      if(chave==='cartoes'){ORDEM=val;atualizarSelects();renderCartoesConfig();}
-      if(chave==='recebidos'){renderPessoas();}
-      if(chave==='cartoes_pagos'){renderLista();renderInicio();}
-    });
-  });
 }
 
 let todosOsDados = {}; // cache global de todos os meses
