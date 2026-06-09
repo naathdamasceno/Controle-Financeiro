@@ -568,6 +568,11 @@ async function fazerLogin(){
   document.getElementById('toggle-mae-wrap').style.display=p.temBeneficio?'block':'none';
   toast('Carregando dados...', true);
   await carregarRenda();await carregarRecorrentes();await carregarCartoes();await carregarDados();
+  // Sincronizar recebidos e cartoes_pagos
+  const recFB = await fbCarregar('recebidos');
+  if(recFB) localStorage.setItem(sk('recebidos'), JSON.stringify(recFB));
+  const cpFB = await fbCarregar('cartoes_pagos');
+  if(cpFB) localStorage.setItem(sk('cartoes_pagos'), JSON.stringify(cpFB));
   gerarParcelasSeNecessario();atualizarSelects();renderTudo();
   ativarSync();
   toast('Dados sincronizados! ☁️', true);
@@ -654,12 +659,11 @@ async function fbCarregar(chave){
 let fbListeners = {};
 function ativarSync(){
   if(!window.fbDb) return;
-  ['dados','renda','recorrentes','cartoes'].forEach(chave=>{
+  ['dados','renda','recorrentes','cartoes','recebidos','cartoes_pagos'].forEach(chave=>{
     if(fbListeners[chave]) return;
     let primeiraVez = true;
     fbListeners[chave] = window.fbOnValue(window.fbRef(window.fbDb, fbPath(chave)), snap => {
       if(!snap.exists()) return;
-      // Ignorar o primeiro disparo (já carregamos no login) e disparos do próprio save
       if(primeiraVez){ primeiraVez=false; return; }
       if(salvandoAgora) return;
       const val = snap.val();
@@ -668,11 +672,12 @@ function ativarSync(){
         todosOsDados = val;
         const m=document.getElementById('selMes').value;
         lancamentos=val[m]?JSON.parse(JSON.stringify(val[m])):[];
-        renderTudo();
-        toast('☁️ Sincronizado!', true);
+        renderTudo();toast('☁️ Sincronizado!', true);
       }
-      if(chave==='renda'){ const r=val; document.getElementById('r-sal').value=r.sal; document.getElementById('r-ben').value=r.ben; document.getElementById('r-bon').value=r.bon; document.getElementById('r-mae').checked=r.mae; renderMetricas(); }
-      if(chave==='cartoes'){ ORDEM=val; atualizarSelects(); renderCartoesConfig(); }
+      if(chave==='renda'){const r=val;document.getElementById('r-sal').value=r.sal;document.getElementById('r-ben').value=r.ben;document.getElementById('r-bon').value=r.bon;document.getElementById('r-mae').checked=r.mae;renderMetricas();}
+      if(chave==='cartoes'){ORDEM=val;atualizarSelects();renderCartoesConfig();}
+      if(chave==='recebidos'){renderPessoas();}
+      if(chave==='cartoes_pagos'){renderLista();renderInicio();}
     });
   });
 }
