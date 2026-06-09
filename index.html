@@ -539,10 +539,9 @@ function popularMeses(){
   const mesAtual=hoje.getMonth()+1, anoAtual=hoje.getFullYear();
   const mesesNomes=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
   sel.innerHTML='';
-  // 3 meses anteriores + mês atual + 5 meses futuros
-  for(let i=-3;i<=5;i++){
+  for(let i=-6;i<=24;i++){
     let m=mesAtual+i, a=anoAtual;
-    if(m<1){m+=12;a--;}if(m>12){m-=12;a++;}
+    while(m<1){m+=12;a--;}while(m>12){m-=12;a++;}
     const val=`${String(m).padStart(2,'0')}.${a}`;
     const opt=document.createElement('option');
     opt.value=val;opt.textContent=`${mesesNomes[m-1]} ${a}`;
@@ -626,10 +625,15 @@ const sk=t=>`cf_${t}_${perfilAtivo}`;
 const fbPath=t=>`usuarios/${perfilAtivo}/${t}`;
 
 // FIREBASE HELPERS
+let salvandoAgora = false;
 async function fbSalvar(chave, valor){
   localStorage.setItem(sk(chave), JSON.stringify(valor));
   if(!window.fbDb) return;
-  try { await window.fbSet(window.fbRef(window.fbDb, fbPath(chave)), valor); } catch(e){ console.warn('FB save err', e); }
+  try {
+    salvandoAgora = true;
+    await window.fbSet(window.fbRef(window.fbDb, fbPath(chave)), valor);
+    setTimeout(()=>{salvandoAgora=false;}, 1000);
+  } catch(e){ console.warn('FB save err', e); salvandoAgora=false; }
 }
 async function fbCarregar(chave){
   if(window.fbDb){
@@ -652,8 +656,12 @@ function ativarSync(){
   if(!window.fbDb) return;
   ['dados','renda','recorrentes','cartoes'].forEach(chave=>{
     if(fbListeners[chave]) return;
+    let primeiraVez = true;
     fbListeners[chave] = window.fbOnValue(window.fbRef(window.fbDb, fbPath(chave)), snap => {
       if(!snap.exists()) return;
+      // Ignorar o primeiro disparo (já carregamos no login) e disparos do próprio save
+      if(primeiraVez){ primeiraVez=false; return; }
+      if(salvandoAgora) return;
       const val = snap.val();
       localStorage.setItem(sk(chave), JSON.stringify(val));
       if(chave==='dados'){
@@ -661,6 +669,7 @@ function ativarSync(){
         const m=document.getElementById('selMes').value;
         lancamentos=val[m]?JSON.parse(JSON.stringify(val[m])):[];
         renderTudo();
+        toast('☁️ Sincronizado!', true);
       }
       if(chave==='renda'){ const r=val; document.getElementById('r-sal').value=r.sal; document.getElementById('r-ben').value=r.ben; document.getElementById('r-bon').value=r.bon; document.getElementById('r-mae').checked=r.mae; renderMetricas(); }
       if(chave==='cartoes'){ ORDEM=val; atualizarSelects(); renderCartoesConfig(); }
@@ -729,16 +738,18 @@ function trocarMes(){
 function renderTudo(){renderLista();renderMetricas();renderInicio();}
 
 function gerarParcelasSeNecessario(){
-  // Verifica se o mês anterior tem parcelas não finalizadas que ainda não foram copiadas para o mês atual
   const mesSel=document.getElementById('selMes').value;
+  // Se o mês já tem dados (inclusive array vazio marcado), não faz nada
+  if(todosOsDados[mesSel]!==undefined)return;
   const [mm,aa]=mesSel.split('.').map(Number);
   let amm=mm-1,aaa=aa;if(amm<1){amm=12;aaa--;}
   const mesAnterior=`${String(amm).padStart(2,'0')}.${aaa}`;
   const lancAnt=todosOsDados[mesAnterior];
-  if(!lancAnt||!lancAnt.length)return;
-  // Se o mês atual já tem dados, não sobrescreve
-  if(lancamentos.length>0)return;
-  // Copia parcelas não finalizadas do mês anterior
+  if(!lancAnt||!lancAnt.length){
+    // Marcar mês como visitado/vazio para não tentar de novo
+    todosOsDados[mesSel]=[];
+    return;
+  }
   const data1=`${aa}-${String(mm).padStart(2,'0')}-01`;
   let count=0;
   lancAnt.forEach(l=>{
@@ -748,6 +759,7 @@ function gerarParcelasSeNecessario(){
     }
   });
   if(count>0){salvarDados();toast(`${count} parcela(s) gerada(s) automaticamente!`);}
+  else{todosOsDados[mesSel]=[];} // marcar como visitado mesmo sem parcelas
 }
 
 // INICIO
