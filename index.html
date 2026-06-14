@@ -202,7 +202,10 @@ body{font-family:-apple-system,'Segoe UI',system-ui,sans-serif;background:var(--
     <div class="topbar-avatar" id="t-avatar" onclick="setNav('config')"></div>
     <h1 id="t-nome"></h1>
   </div>
-  <select class="mes-pill" id="selMes" onchange="trocarMes()"></select>
+  <div style="display:flex;align-items:center;gap:8px">
+    <button onclick="sincronizarAgora()" style="background:none;border:none;color:var(--text2);cursor:pointer;padding:4px 6px;font-size:20px;line-height:1" title="Sincronizar"><i class="ti ti-refresh"></i></button>
+    <select class="mes-pill" id="selMes" onchange="trocarMes()"></select>
+  </div>
 </div>
 <div class="main">
 
@@ -546,6 +549,34 @@ function popularMeses(){
     if(i===0)opt.selected=true;
     sel.appendChild(opt);
   }
+}
+
+async function sincronizarAgora(){
+  if(!window.fbDb){ toast('Sem conexão com Firebase',false); return; }
+  toast('Sincronizando...', true);
+  try {
+    const snap = await window.fbDb.ref(`usuarios/${perfilAtivo}`).get();
+    if(snap.exists()){
+      const tudo = snap.val();
+      function extrair(v){ return v && v._device ? v.data : v; }
+      const dados = extrair(tudo.dados);
+      const renda = extrair(tudo.renda);
+      const cartoes = extrair(tudo.cartoes);
+      const recorrentes = extrair(tudo.recorrentes);
+      const recebidos = extrair(tudo.recebidos);
+      const cartoesPagos = extrair(tudo.cartoes_pagos);
+      if(dados){ todosOsDados=dados; localStorage.setItem(sk('dados'),JSON.stringify(dados)); }
+      if(renda){ document.getElementById('r-sal').value=renda.sal||0; document.getElementById('r-ben').value=renda.ben||0; document.getElementById('r-bon').value=renda.bon||0; document.getElementById('r-mae').checked=renda.mae||false; localStorage.setItem(sk('renda'),JSON.stringify(renda)); }
+      if(cartoes){ ORDEM=cartoes; atualizarSelects(); localStorage.setItem(sk('cartoes'),JSON.stringify(cartoes)); }
+      if(recorrentes){ RECORRENTES=recorrentes; recSel=new Set(RECORRENTES.map((_,i)=>i)); localStorage.setItem(sk('recorrentes'),JSON.stringify(recorrentes)); }
+      if(recebidos) localStorage.setItem(sk('recebidos'),JSON.stringify(recebidos));
+      if(cartoesPagos) localStorage.setItem(sk('cartoes_pagos'),JSON.stringify(cartoesPagos));
+      const m=document.getElementById('selMes').value;
+      lancamentos=todosOsDados[m]?JSON.parse(JSON.stringify(todosOsDados[m])):[];
+      renderTudo(); renderPessoas();
+      toast('✅ Sincronizado!', true);
+    }
+  } catch(e){ toast('Erro ao sincronizar',false); console.error(e); }
 }
 
 // LOGIN
