@@ -570,13 +570,19 @@ async function fazerLogin(){
     const snap = await window.fbDb.ref(`usuarios/${perfilAtivo}`).get();
     if(snap.exists()){
       const tudo = snap.val();
-      ['dados','renda','recorrentes','cartoes','recebidos','cartoes_pagos'].forEach(k=>{
-        if(tudo[k]!==undefined) localStorage.setItem(sk(k), JSON.stringify(tudo[k]));
-      });
-      if(tudo.dados){ todosOsDados=tudo.dados; }
-      if(tudo.renda){ const r=tudo.renda; document.getElementById('r-sal').value=r.sal||0; document.getElementById('r-ben').value=r.ben||0; document.getElementById('r-bon').value=r.bon||0; document.getElementById('r-mae').checked=r.mae||false; }
-      if(tudo.cartoes){ ORDEM=tudo.cartoes; }
-      if(tudo.recorrentes){ RECORRENTES=tudo.recorrentes; recSel=new Set(RECORRENTES.map((_,i)=>i)); }
+      function extrair(v){ return v && v._device ? v.data : v; }
+      const dados = extrair(tudo.dados);
+      const renda = extrair(tudo.renda);
+      const cartoes = extrair(tudo.cartoes);
+      const recorrentes = extrair(tudo.recorrentes);
+      const recebidos = extrair(tudo.recebidos);
+      const cartoesPagos = extrair(tudo.cartoes_pagos);
+      if(dados){ todosOsDados=dados; localStorage.setItem(sk('dados'),JSON.stringify(dados)); }
+      if(renda){ document.getElementById('r-sal').value=renda.sal||0; document.getElementById('r-ben').value=renda.ben||0; document.getElementById('r-bon').value=renda.bon||0; document.getElementById('r-mae').checked=renda.mae||false; localStorage.setItem(sk('renda'),JSON.stringify(renda)); }
+      if(cartoes){ ORDEM=cartoes; localStorage.setItem(sk('cartoes'),JSON.stringify(cartoes)); }
+      if(recorrentes){ RECORRENTES=recorrentes; recSel=new Set(RECORRENTES.map((_,i)=>i)); localStorage.setItem(sk('recorrentes'),JSON.stringify(recorrentes)); }
+      if(recebidos) localStorage.setItem(sk('recebidos'),JSON.stringify(recebidos));
+      if(cartoesPagos) localStorage.setItem(sk('cartoes_pagos'),JSON.stringify(cartoesPagos));
     }
   } catch(e){ console.warn('Firebase load error:', e); }
   // Fallback localStorage
@@ -594,16 +600,28 @@ async function fazerLogin(){
 
 function ativarSync(){
   if(!window.fbDb) return;
+  let primeiroDisparo = true;
   window.fbDb.ref(`usuarios/${perfilAtivo}`).on('value', snap => {
-    if(!snap.exists()||salvandoAgora) return;
+    if(!snap.exists()) return;
+    if(primeiroDisparo){ primeiroDisparo=false; return; } // já carregamos no login
     const tudo = snap.val();
-    const m=document.getElementById('selMes').value;
-    if(tudo.dados){ todosOsDados=tudo.dados; lancamentos=tudo.dados[m]?JSON.parse(JSON.stringify(tudo.dados[m])): []; localStorage.setItem(sk('dados'),JSON.stringify(tudo.dados)); }
-    if(tudo.recebidos) localStorage.setItem(sk('recebidos'),JSON.stringify(tudo.recebidos));
-    if(tudo.cartoes_pagos) localStorage.setItem(sk('cartoes_pagos'),JSON.stringify(tudo.cartoes_pagos));
-    if(tudo.renda){ const r=tudo.renda; document.getElementById('r-sal').value=r.sal||0; document.getElementById('r-ben').value=r.ben||0; document.getElementById('r-bon').value=r.bon||0; document.getElementById('r-mae').checked=r.mae||false; }
-    if(tudo.cartoes){ ORDEM=tudo.cartoes; atualizarSelects(); }
-    renderTudo();renderPessoas();
+    // Verificar se mudança veio de OUTRO dispositivo
+    const dadosRaw = tudo.dados;
+    if(dadosRaw && dadosRaw._device === deviceId) return; // foi eu mesmo, ignora
+    // Extrair dados reais (remover metadados _device/_ts)
+    function extrair(v){ return v && v._device ? v.data : v; }
+    const m = document.getElementById('selMes').value;
+    const dados = extrair(dadosRaw);
+    const recebidos = extrair(tudo.recebidos);
+    const cartoesPagos = extrair(tudo.cartoes_pagos);
+    const renda = extrair(tudo.renda);
+    const cartoes = extrair(tudo.cartoes);
+    if(dados){ todosOsDados=dados; lancamentos=dados[m]?JSON.parse(JSON.stringify(dados[m])):[]; localStorage.setItem(sk('dados'),JSON.stringify(dados)); }
+    if(recebidos) localStorage.setItem(sk('recebidos'),JSON.stringify(recebidos));
+    if(cartoesPagos) localStorage.setItem(sk('cartoes_pagos'),JSON.stringify(cartoesPagos));
+    if(renda){ document.getElementById('r-sal').value=renda.sal||0; document.getElementById('r-ben').value=renda.ben||0; document.getElementById('r-bon').value=renda.bon||0; document.getElementById('r-mae').checked=renda.mae||false; }
+    if(cartoes){ ORDEM=cartoes; atualizarSelects(); }
+    renderTudo(); renderPessoas();
     toast('☁️ Sincronizado!', true);
   });
 }
@@ -660,22 +678,24 @@ const sk=t=>`cf_${t}_${perfilAtivo}`;
 const fbPath=t=>`usuarios/${perfilAtivo}/${t}`;
 
 // FIREBASE HELPERS
-let salvandoAgora = false;
+const deviceId = Math.random().toString(36).slice(2); // ID único por aba/dispositivo
+let ultimoSalvoId = null;
+
 async function fbSalvar(chave, valor){
   localStorage.setItem(sk(chave), JSON.stringify(valor));
   if(!window.fbDb) return;
   try {
-    salvandoAgora = true;
-    await window.fbDb.ref(`usuarios/${perfilAtivo}/${chave}`).set(valor);
-    setTimeout(()=>{salvandoAgora=false;}, 1500);
-  } catch(e){ console.warn('FB save err', e); salvandoAgora=false; }
+    const payload = { data: valor, _device: deviceId, _ts: Date.now() };
+    await window.fbDb.ref(`usuarios/${perfilAtivo}/${chave}`).set(payload);
+  } catch(e){ console.warn('FB save err', e); }
 }
 async function fbCarregar(chave){
   if(window.fbDb){
     try {
       const snap = await window.fbDb.ref(`usuarios/${perfilAtivo}/${chave}`).get();
       if(snap.exists()){
-        const val = snap.val();
+        const raw = snap.val();
+        const val = raw && raw._device ? raw.data : raw;
         localStorage.setItem(sk(chave), JSON.stringify(val));
         return val;
       }
