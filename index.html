@@ -216,6 +216,7 @@ body{font-family:-apple-system,'Segoe UI',system-ui,sans-serif;background:var(--
       <div class="summary-card"><div class="sc-label">Sobra</div><div class="sc-val" id="s-livre">R$ 0</div><div class="sc-sub" id="s-livre-sub">no bolso</div></div>
       <div class="summary-card"><div class="sc-label">Gasto (Eu)</div><div class="sc-val" id="s-total">R$ 0</div><div class="sc-sub">meus gastos</div></div>
       <div class="summary-card"><div class="sc-label">A receber</div><div class="sc-val" id="s-rec">R$ 0</div><div class="sc-sub" id="s-rec-sub">pessoas</div></div>
+      <div class="summary-card"><div class="sc-label">Eu devo</div><div class="sc-val neg" id="s-eudevo">R$ 0</div><div class="sc-sub" id="s-eudevo-sub">a pessoas</div></div>
     </div>
     <div class="panel">
       <div class="panel-title">Renda do mês</div>
@@ -744,7 +745,21 @@ async function carregarRecorrentes(){
 
 // MÉTRICAS
 function getRenda(){const sal=parseFloat(document.getElementById('r-sal').value)||0,ben=parseFloat(document.getElementById('r-ben').value)||0,bon=parseFloat(document.getElementById('r-bon').value)||0,mae=document.getElementById('r-mae').checked;return{sal,ben,bon,mae,disp:sal+(mae?0:ben)+bon,base:sal+(mae?0:ben)+bon};}
-function calcM(){let total=0,eu=0,rec=0,pessoas=[];lancamentos.forEach(l=>{const rs=splitResp(l.resp),parte=l.valor/rs.length;total+=l.valor;rs.forEach(r=>{if(isEu(r)){eu+=parte}else{rec+=parte;if(!pessoas.includes(r))pessoas.push(r)}})});return{total,eu,rec,pessoas};}
+function calcM(){
+  let total=0,eu=0,rec=0,eudevo=0,pessoas=[],pessoasDevem=[];
+  lancamentos.forEach(l=>{
+    const rs=splitResp(l.resp),parte=l.valor/rs.length;
+    total+=l.valor;
+    rs.forEach(r=>{
+      if(isEu(r)){ eu+=parte; }
+      else {
+        if(parte>0){ rec+=parte; if(!pessoasDevem.includes(r))pessoasDevem.push(r); }
+        else { eudevo+=Math.abs(parte); if(!pessoas.includes(r))pessoas.push(r); }
+      }
+    });
+  });
+  return{total,eu,rec,eudevo,pessoas:pessoasDevem};
+}
 function renderMetricas(){
   const r=getRenda(),m=calcM(),livre=r.base-m.eu;
   document.getElementById('s-disp').textContent=fmt(r.disp);
@@ -753,6 +768,8 @@ function renderMetricas(){
   document.getElementById('s-total').textContent=fmt(m.eu);
   document.getElementById('s-rec').textContent=fmt(m.rec);
   document.getElementById('s-rec-sub').textContent=m.pessoas.length?m.pessoas.slice(0,2).join(', ')+(m.pessoas.length>2?'...':''):'ninguém';
+  document.getElementById('s-eudevo').textContent=fmt(m.eudevo);
+  document.getElementById('s-eudevo-sub').textContent=m.eudevo>0?'pendente':'tudo certo';
 }
 
 // NAV
