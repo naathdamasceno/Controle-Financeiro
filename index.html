@@ -3,50 +3,58 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<meta name="apple-mobile-web-app-capable" content="yes">
 <title>Controle Financeiro</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
-:root{--bg:#fff;--bg2:#f5f5f4;--bg3:#eeede9;--text:#1a1a18;--text2:#6b6b67;--text3:#9b9b96;--border:rgba(0,0,0,0.1);--border2:rgba(0,0,0,0.2);--radius:10px;--radius-lg:14px;--green:#3B6D11;--red:#A32D2D;--blue:#185FA5;--blue-bg:#e6f1fb;--nav:60px;}
-@media(prefers-color-scheme:dark){:root{--bg:#1c1c1a;--bg2:#252523;--bg3:#2e2e2b;--text:#f0efeb;--text2:#9b9b96;--text3:#6b6b67;--border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.16);--green:#7bc950;--red:#e07070;--blue:#6aafee;--blue-bg:#0c2a45;}}
+:root{--bg:#fff;--bg2:#f5f5f4;--bg3:#eeede9;--text:#1a1a18;--text2:#6b6b67;--text3:#9b9b96;--border:rgba(0,0,0,.1);--border2:rgba(0,0,0,.2);--radius:10px;--radius-lg:14px;--green:#3B6D11;--red:#A32D2D;--blue:#185FA5;--blue-bg:#e6f1fb;--nav:60px}
+@media(prefers-color-scheme:dark){:root{--bg:#1c1c1a;--bg2:#252523;--bg3:#2e2e2b;--text:#f0efeb;--text2:#9b9b96;--text3:#6b6b67;--border:rgba(255,255,255,.08);--border2:rgba(255,255,255,.16);--green:#7bc950;--red:#e07070;--blue:#6aafee;--blue-bg:#0c2a45}}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{font-family:-apple-system,'Segoe UI',system-ui,sans-serif;background:var(--bg3);color:var(--text);font-size:15px;min-height:100vh}
-/* UTILS */
 .hidden{display:none!important}
 .pos{color:var(--green)!important}.neg{color:var(--red)!important}
+
 /* LOGIN */
 .login-wrap{position:fixed;inset:0;background:var(--bg3);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1.5rem;z-index:900}
+.login-logo .ic{font-size:30px}
 .login-logo{width:64px;height:64px;background:var(--blue);border-radius:18px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:30px;margin-bottom:1rem}
 .login-title{font-size:22px;font-weight:700;margin-bottom:.25rem}
 .login-sub{font-size:14px;color:var(--text2);margin-bottom:2rem;text-align:center}
-.profiles-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;width:100%;max-width:360px;margin-bottom:1.5rem;max-height:260px;overflow-y:auto}
+.profiles-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;width:100%;max-width:380px;margin-bottom:1.5rem;max-height:260px;overflow-y:auto}
 .profile-tile{padding:1rem .75rem;border:2px solid var(--border2);border-radius:var(--radius-lg);cursor:pointer;background:var(--bg);text-align:center;transition:all .15s;font-family:inherit}
 .profile-tile:active{transform:scale(.96)}.profile-tile.sel{border-color:var(--blue);background:var(--blue-bg)}
-.profile-tile .av{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto .5rem;font-size:20px;font-weight:700;color:#fff}
+.profile-tile .av{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto .5rem;font-size:18px;font-weight:700;color:#fff}
 .profile-tile .pn{font-size:13px;font-weight:600}
-.login-field{width:100%;max-width:360px;margin-bottom:.875rem}
-.login-field label{font-size:13px;color:var(--text2);display:block;margin-bottom:4px;font-weight:500}
-.login-field input{width:100%;height:48px;border:1.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);font-size:16px;padding:0 14px;outline:none;font-family:inherit}
-.login-field input:focus{border-color:var(--blue)}
+.lf{width:100%;max-width:380px;margin-bottom:.875rem}
+.lf label{font-size:13px;color:var(--text2);display:block;margin-bottom:4px;font-weight:500}
+.lf input{width:100%;height:48px;border:1.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);font-size:16px;padding:0 14px;outline:none;font-family:inherit}
+.lf input:focus{border-color:var(--blue)}
 .login-err{font-size:13px;color:var(--red);margin-bottom:.75rem;display:none;text-align:center}
-.btn-login{width:100%;max-width:360px;height:50px;font-size:16px;font-weight:600;cursor:pointer;border-radius:var(--radius);border:none;background:var(--blue);color:#fff;font-family:inherit}
+.btn-login{width:100%;max-width:380px;height:50px;font-size:16px;font-weight:600;cursor:pointer;border-radius:var(--radius);border:none;background:var(--blue);color:#fff;font-family:inherit}
 .btn-login:active{opacity:.85}
+.sync-badge{position:fixed;top:8px;right:8px;font-size:11px;padding:3px 9px;border-radius:20px;font-weight:600;z-index:200}
+.sync-ok{background:#d4edda;color:#155724}
+.sync-off{background:#fff3cd;color:#856404}
+@media(prefers-color-scheme:dark){.sync-ok{background:#0d3a1a;color:#7bc950}.sync-off{background:#3a2a00;color:#ffc107}}
+
 /* TOPBAR */
 .topbar{background:var(--bg);border-bottom:.5px solid var(--border);height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 1rem;position:sticky;top:0;z-index:50}
 .topbar-left{display:flex;align-items:center;gap:8px}
 .tav{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;cursor:pointer;flex-shrink:0}
 .topbar h1{font-size:16px;font-weight:700}
 .mes-pill{height:34px;padding:0 12px;font-size:13px;font-weight:500;border:1.5px solid var(--border2);border-radius:20px;background:var(--bg2);color:var(--text);font-family:inherit;cursor:pointer;outline:none}
+
 /* BOTTOM NAV */
 .bnav{position:fixed;bottom:0;left:0;right:0;height:var(--nav);background:var(--bg);border-top:.5px solid var(--border);display:flex;z-index:50;padding-bottom:env(safe-area-inset-bottom)}
 .nb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;border:none;background:none;font-family:inherit;color:var(--text3);padding:.5rem 0}
-.nb i{font-size:22px}.nb span{font-size:10px;font-weight:500}
+.ic{font-style:normal;line-height:1;display:inline-block}
+.nb .ic{font-size:21px}.nb span{font-size:10px;font-weight:500}
 .nb.active{color:var(--blue)}
+
 /* MAIN */
 .main{padding:1rem;padding-bottom:calc(var(--nav) + 1.5rem);max-width:600px;margin:0 auto}
 .section{display:none}.section.active{display:block}
-/* CARDS */
+
+/* CARDS SUMMARY */
 .sum-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1rem}
 .sum-card{background:var(--bg);border-radius:var(--radius-lg);padding:1rem;border:.5px solid var(--border)}
 .sum-card.hi{background:var(--blue);border-color:var(--blue)}
@@ -56,22 +64,25 @@ body{font-family:-apple-system,'Segoe UI',system-ui,sans-serif;background:var(--
 .sum-card.hi .val{color:#fff}
 .sum-card .sub{font-size:11px;color:var(--text3);margin-top:3px}
 .sum-card.hi .sub{color:rgba(255,255,255,.6)}
+
 /* PANEL */
 .panel{background:var(--bg);border-radius:var(--radius-lg);padding:1rem;margin-bottom:1rem;border:.5px solid var(--border)}
 .panel-hd{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text2);margin-bottom:.875rem;display:flex;align-items:center;justify-content:space-between}
+
 /* FIELD */
 .field{margin-bottom:.75rem}
 .field label{font-size:13px;color:var(--text2);display:block;margin-bottom:4px;font-weight:500}
 .field input,.field select,.field textarea{width:100%;height:44px;border:1.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);font-size:15px;padding:0 12px;outline:none;font-family:inherit}
 .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--blue);background:var(--bg)}
 .field textarea{height:auto;padding:.75rem 12px;resize:none;line-height:1.5}
+
 /* TOGGLE */
 .tog-field{display:flex;align-items:center;justify-content:space-between;height:44px;padding:0 12px;background:var(--bg2);border:1.5px solid var(--border2);border-radius:var(--radius)}
-.tog-field label{font-size:15px;color:var(--text);cursor:pointer;flex:1}
 .tog{width:44px;height:26px;-webkit-appearance:none;appearance:none;background:var(--border2);border-radius:13px;position:relative;transition:background .2s;cursor:pointer;flex-shrink:0}
 .tog:checked{background:var(--blue)}
 .tog::after{content:'';position:absolute;width:20px;height:20px;background:#fff;border-radius:50%;top:3px;left:3px;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
 .tog:checked::after{left:21px}
+
 /* BTNS */
 .btn{height:44px;padding:0 16px;font-size:14px;font-weight:500;cursor:pointer;border-radius:var(--radius);border:1.5px solid var(--border2);background:var(--bg);color:var(--text);font-family:inherit;display:inline-flex;align-items:center;justify-content:center;gap:6px;transition:all .15s}
 .btn:active{transform:scale(.97)}.btn-p{background:var(--blue);color:#fff;border-color:var(--blue)}
@@ -79,6 +90,7 @@ body{font-family:-apple-system,'Segoe UI',system-ui,sans-serif;background:var(--
 .btn-w{width:100%}.btn-s{height:34px;padding:0 12px;font-size:13px}
 .fab{position:fixed;bottom:calc(var(--nav) + 1rem);right:1rem;width:56px;height:56px;border-radius:50%;background:var(--blue);color:#fff;border:none;font-size:24px;cursor:pointer;display:none;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(24,95,165,.4);z-index:40}
 .fab:active{transform:scale(.9)}
+
 /* LANCAMENTO CARD */
 .grp{margin-bottom:1rem}
 .grp-hd{display:flex;align-items:center;justify-content:space-between;padding:.4rem 0;margin-bottom:.4rem}
@@ -93,25 +105,29 @@ body{font-family:-apple-system,'Segoe UI',system-ui,sans-serif;background:var(--
 .lc-acts{display:flex;gap:6px;margin-top:.6rem;padding-top:.6rem;border-top:.5px solid var(--border)}
 .act{flex:1;height:32px;font-size:12px;font-weight:500;cursor:pointer;border-radius:8px;border:1px solid var(--border2);background:var(--bg2);color:var(--text2);font-family:inherit;display:inline-flex;align-items:center;justify-content:center;gap:4px}
 .act:active{opacity:.7}.act.red:active{color:var(--red)}
-/* BADGES TAGS */
+
+/* BADGES */
 .badge{font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600;display:inline-block}
 .tag{font-size:11px;background:var(--bg3);border-radius:20px;padding:2px 8px;color:var(--text2);display:inline-block;margin:1px}
 .tag-eu{background:var(--blue-bg);color:var(--blue)}
 .tag-p{font-size:11px;background:#fff3cd;color:#856404;border-radius:20px;padding:2px 8px;font-weight:600;display:inline-block}
 @media(prefers-color-scheme:dark){.tag-p{background:#3a2a00;color:#ffc107}}
+
 /* PESSOAS */
 .pc{background:var(--bg);border-radius:var(--radius-lg);border:.5px solid var(--border);margin-bottom:.875rem;overflow:hidden}
 .pc-hd{padding:.875rem 1rem;border-bottom:.5px solid var(--border);display:flex;align-items:center;justify-content:space-between}
 .pc-nm{font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px}
 .pc-item{display:flex;align-items:center;justify-content:space-between;padding:.75rem 1rem;border-bottom:.5px solid var(--border)}
 .pc-item:last-child{border-bottom:none}
+
 /* SHEETS */
-.backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;display:none;align-items:flex-end;justify-content:center}
+.backdrop{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:none;align-items:flex-end;justify-content:center}
 .backdrop.open{display:flex}
 .sheet{background:var(--bg);border-radius:20px 20px 0 0;padding:1.25rem;width:100%;max-width:600px;padding-bottom:calc(1.25rem + env(safe-area-inset-bottom));max-height:92vh;overflow-y:auto}
 .sh-handle{width:40px;height:4px;background:var(--border2);border-radius:2px;margin:0 auto .875rem}
 .sheet h3{font-size:17px;font-weight:600;margin-bottom:1rem}
-/* RESP CHIPS */
+
+/* RESP */
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:.75rem;min-height:28px}
 .chip{display:inline-flex;align-items:center;gap:4px;background:var(--blue-bg);color:var(--blue);border-radius:20px;padding:4px 12px;font-size:13px;font-weight:500}
 .chip button{background:none;border:none;cursor:pointer;color:var(--blue);font-size:15px;line-height:1;padding:0}
@@ -121,30 +137,37 @@ body{font-family:-apple-system,'Segoe UI',system-ui,sans-serif;background:var(--
 .resp-sug{font-size:12px;background:var(--bg2);border:1px solid var(--border2);border-radius:20px;padding:3px 10px;cursor:pointer;color:var(--text2)}
 .resp-sug:active{background:var(--blue-bg);color:var(--blue)}
 .resp-info{font-size:12px;color:var(--text3);margin-top:5px}
-/* PARC ROW */
+
+/* PARC */
 .parc-row{display:grid;grid-template-columns:1fr auto 1fr;gap:4px;align-items:center}
 .parc-row span{text-align:center;font-size:13px;color:var(--text2);padding-top:20px}
+
 /* ADMIN */
 .admin-tag{font-size:10px;background:#f0e6ff;color:#6a1ab0;border-radius:20px;padding:2px 7px;font-weight:600;margin-left:5px;vertical-align:middle}
 @media(prefers-color-scheme:dark){.admin-tag{background:#2a0a4a;color:#c07aee}}
+
 /* TOAST */
 .toast{position:fixed;bottom:calc(var(--nav) + .75rem);left:50%;transform:translateX(-50%) translateY(10px);background:var(--text);color:var(--bg);padding:.75rem 1.25rem;border-radius:20px;font-size:14px;display:flex;align-items:center;gap:8px;opacity:0;transition:all .25s;z-index:999;pointer-events:none;white-space:nowrap}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
 .sep{height:.5px;background:var(--border);margin:.5rem 0}
 .empty{color:var(--text2);font-size:14px;padding:2rem 0;text-align:center}
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.loading{text-align:center;padding:2rem 0;color:var(--text2);font-size:14px}
 </style>
 </head>
 <body>
 
+<!-- STATUS SYNC -->
+<div id="syncBadge" class="sync-badge hidden"></div>
+
 <!-- LOGIN -->
 <div class="login-wrap" id="loginWrap">
-  <div class="login-logo"><i class="ti ti-wallet"></i></div>
+  <div class="login-logo"><span class="ic">▦</span></div>
   <div class="login-title">Controle Financeiro</div>
   <div class="login-sub">Selecione seu perfil</div>
   <div class="profiles-grid" id="profilesGrid"></div>
-  <div class="login-field"><label>Senha</label><input type="password" id="loginSenha" placeholder="Digite sua senha" onkeydown="if(event.key==='Enter')doLogin()"></div>
+  <div class="lf"><label>Senha</label><input type="password" id="loginSenha" placeholder="Digite sua senha"></div>
   <div class="login-err" id="loginErr">Senha incorreta.</div>
   <button class="btn-login" onclick="doLogin()">Entrar</button>
 </div>
@@ -169,8 +192,8 @@ body{font-family:-apple-system,'Segoe UI',system-ui,sans-serif;background:var(--
       </div>
       <div class="panel">
         <div class="panel-hd">Renda do mês</div>
-        <div class="field"><label>Salário líquido</label><input type="number" id="rSal" step="0.01" oninput="saveRenda();renderMetrics()"></div>
-        <div class="field"><label>Bônus / comissão</label><input type="number" id="rBon" step="0.01" placeholder="0,00" oninput="saveRenda();renderMetrics()"></div>
+        <div class="field"><label>Salário líquido</label><input type="number" id="rSal" step="0.01" oninput="saveRenda()"></div>
+        <div class="field"><label>Bônus / comissão</label><input type="number" id="rBon" step="0.01" placeholder="0,00" oninput="saveRenda()"></div>
       </div>
       <div class="panel-hd" style="padding:.25rem .25rem .5rem">Gastos do mês</div>
       <div id="inicioLista"></div>
@@ -183,9 +206,8 @@ body{font-family:-apple-system,'Segoe UI',system-ui,sans-serif;background:var(--
     </div>
     <!-- CONFIG -->
     <div id="sec-config" class="section">
-      <!-- Renda já está no início, config tem cartões, senha, admin -->
       <div class="panel">
-        <div class="panel-hd">Meus cartões <button class="btn btn-s btn-p" onclick="openSheet('sheetCartao',null)"><i class="ti ti-plus"></i> Novo</button></div>
+        <div class="panel-hd">Meus cartões <button class="btn btn-s btn-p" onclick="openSheet('sheetCartao');editCartaoIdx=null;resetCartaoForm()"><span class="ic">+</span> Novo</button></div>
         <div id="configCartoes"></div>
       </div>
       <div class="panel">
@@ -193,42 +215,50 @@ body{font-family:-apple-system,'Segoe UI',system-ui,sans-serif;background:var(--
         <div class="field"><label>Senha atual</label><input type="password" id="cfgSenhaAtual" placeholder="Senha atual"></div>
         <div class="field"><label>Nova senha</label><input type="password" id="cfgSenhaNova" placeholder="Nova senha"></div>
         <div style="font-size:13px;display:none;margin-bottom:.75rem" id="cfgSenhaMsg"></div>
-        <button class="btn btn-p btn-w" onclick="alterarSenha()"><i class="ti ti-check"></i> Salvar senha</button>
+        <button class="btn btn-p btn-w" onclick="alterarSenha()"><span class="ic">✓</span> Salvar senha</button>
       </div>
       <div class="panel" id="adminPanel" style="display:none">
-        <div class="panel-hd">Administrador — Perfis <button class="btn btn-s btn-p" onclick="openSheet('sheetNovoPerfil',null)"><i class="ti ti-plus"></i> Novo perfil</button></div>
+        <div class="panel-hd">Administrador — Perfis <button class="btn btn-s btn-p" onclick="editPerfilIdx=null;resetPerfilForm();openSheet('sheetNovoPerfil')"><span class="ic">+</span> Novo perfil</button></div>
         <div id="adminPerfis"></div>
       </div>
       <div class="panel">
         <div class="panel-hd">Exportar</div>
-        <button class="btn btn-w" onclick="exportXLSX()"><i class="ti ti-download"></i> Exportar XLSX do mês</button>
+        <button class="btn btn-w" onclick="exportXLSX()"><span class="ic">↓</span> Exportar XLSX do mês</button>
       </div>
       <div class="panel">
-        <button class="btn btn-d btn-w" onclick="sair()"><i class="ti ti-logout"></i> Sair</button>
+        <div class="panel-hd">Backup completo</div>
+        <button class="btn btn-w" onclick="exportarBackup()"><span class="ic">↓</span> Exportar backup (JSON)</button>
+        <div style="height:8px"></div>
+        <input type="file" id="fileBackup" accept=".json,application/json" style="display:none" onchange="importarBackup(this)">
+        <button class="btn btn-w" onclick="document.getElementById('fileBackup').click()"><span class="ic">↑</span> Importar backup (JSON)</button>
+        <div id="backupMsg" style="font-size:13px;margin-top:.6rem;line-height:1.45"></div>
+      </div>
+      <div class="panel">
+        <button class="btn btn-d btn-w" onclick="sair()"><span class="ic">⎋</span> Sair</button>
       </div>
     </div>
   </div>
   <nav class="bnav">
-    <button class="nb active" id="nb-inicio" onclick="setNav('inicio')"><i class="ti ti-home"></i><span>Início</span></button>
-    <button class="nb" id="nb-pessoas" onclick="setNav('pessoas')"><i class="ti ti-users"></i><span>Pessoas</span></button>
-    <button class="nb" id="nb-config" onclick="setNav('config')"><i class="ti ti-settings"></i><span>Config</span></button>
+    <button class="nb active" id="nb-inicio" onclick="setNav('inicio')"><span class="ic">⌂</span><span>Início</span></button>
+    <button class="nb" id="nb-pessoas" onclick="setNav('pessoas')"><span class="ic">👥</span><span>Pessoas</span></button>
+    <button class="nb" id="nb-config" onclick="setNav('config')"><span class="ic">⚙</span><span>Config</span></button>
   </nav>
-  <button class="fab" id="fab" onclick="openNovoLanc()"><i class="ti ti-plus"></i></button>
+  <button class="fab" id="fab" onclick="openNovoLanc()"><span class="ic">+</span></button>
 </div>
 
-<!-- SHEET: NOVO/EDITAR LANCAMENTO -->
+<!-- SHEET LANCAMENTO -->
 <div class="backdrop" id="sheetLanc" onclick="if(event.target===this)closeSheet('sheetLanc')">
   <div class="sheet">
     <div class="sh-handle"></div>
     <h3 id="shLancTitulo">Nova despesa</h3>
     <div class="g2">
-      <div class="field"><label>Cartão / Forma</label><select id="fCartao"></select></div>
+      <div class="field"><label>Cartão / Forma</label><select id="fCartao" onchange="autoMesPag()"></select></div>
       <div class="field"><label>Mês de pagamento</label><select id="fMesPag"></select></div>
     </div>
     <div class="field"><label>Descrição</label><input type="text" id="fDesc" placeholder="Ex: Restaurante..."></div>
     <div class="g2">
       <div class="field"><label>Valor total (R$)</label><input type="number" id="fVal" placeholder="0,00" step="0.01" min="0" oninput="renderChips()"></div>
-      <div class="field"><label>Parcela (atual/total)</label>
+      <div class="field"><label>Parcela (atual / total)</label>
         <div class="parc-row"><input type="number" id="fPA" value="1" min="1"><span>de</span><input type="number" id="fPT" value="1" min="1"></div>
       </div>
     </div>
@@ -236,53 +266,55 @@ body{font-family:-apple-system,'Segoe UI',system-ui,sans-serif;background:var(--
       <label>De quem? <span style="font-weight:400;color:var(--text3);font-size:12px">(dividido igualmente)</span></label>
       <div class="chips" id="chips"></div>
       <div class="resp-row">
-        <input type="text" id="respInput" placeholder="Nome + Enter">
-        <button class="btn btn-s" onclick="addResp()"><i class="ti ti-plus"></i></button>
+        <input type="text" id="respInput" placeholder="Nome + Enter" autocomplete="off">
+        <button class="btn btn-s" onclick="addResp()"><span class="ic">+</span></button>
         <button class="btn btn-s btn-p" onclick="addResp('Eu')">+ Eu</button>
       </div>
       <div class="resp-suggestions" id="respSugs"></div>
       <div class="resp-info" id="respInfo"></div>
     </div>
-    <button class="btn btn-p btn-w" style="height:50px;font-size:16px;margin-top:.25rem" onclick="salvarLanc()"><i class="ti ti-check"></i> <span id="shLancBtn">Adicionar</span></button>
+    <button class="btn btn-p btn-w" style="height:50px;font-size:16px;margin-top:.25rem" onclick="salvarLanc()">
+      <span class="ic">✓</span> <span id="shLancBtn">Adicionar</span>
+    </button>
   </div>
 </div>
 
-<!-- SHEET: CARTAO -->
+<!-- SHEET CARTAO -->
 <div class="backdrop" id="sheetCartao" onclick="if(event.target===this)closeSheet('sheetCartao')">
   <div class="sheet">
     <div class="sh-handle"></div>
     <h3 id="shCartaoTitulo">Novo cartão</h3>
     <div class="field"><label>Nome do cartão</label><input type="text" id="cNome" placeholder="Ex: Nubank, Inter..."></div>
-    <div class="field"><label>Dia de fechamento</label><input type="number" id="cFecha" min="1" max="31" placeholder="Ex: 18"></div>
+    <div class="field"><label>Dia de fechamento <span style="font-size:12px;color:var(--text3)">(0 = sem fechamento)</span></label><input type="number" id="cFecha" min="0" max="31" placeholder="0"></div>
     <div class="field"><label>Cor (hex)</label><input type="text" id="cCor" placeholder="#185FA5" value="#185FA5"></div>
     <div class="g2" style="margin-top:.25rem">
       <button class="btn btn-w" onclick="closeSheet('sheetCartao')">Cancelar</button>
-      <button class="btn btn-p btn-w" onclick="salvarCartao()"><i class="ti ti-check"></i> Salvar</button>
+      <button class="btn btn-p btn-w" onclick="salvarCartao()"><span class="ic">✓</span> Salvar</button>
     </div>
     <div style="margin-top:.75rem" id="shCartaoDelWrap"></div>
   </div>
 </div>
 
-<!-- SHEET: NOVO PERFIL (admin) -->
+<!-- SHEET PERFIL -->
 <div class="backdrop" id="sheetNovoPerfil" onclick="if(event.target===this)closeSheet('sheetNovoPerfil')">
   <div class="sheet">
     <div class="sh-handle"></div>
     <h3 id="shPerfilTitulo">Novo perfil</h3>
     <div class="field"><label>Nome</label><input type="text" id="npNome" placeholder="Ex: Jhones"></div>
+    <div class="field"><label>Cor (hex)</label><input type="text" id="npCor" value="#185FA5"></div>
     <div class="field"><label>Senha</label><input type="password" id="npSenha" placeholder="Senha"></div>
     <div class="field">
-      <label>Tipo</label>
       <div class="tog-field"><label for="npAdmin">Administrador</label><input type="checkbox" class="tog" id="npAdmin"></div>
     </div>
     <div class="g2" style="margin-top:.25rem">
       <button class="btn btn-w" onclick="closeSheet('sheetNovoPerfil')">Cancelar</button>
-      <button class="btn btn-p btn-w" onclick="salvarPerfil()"><i class="ti ti-check"></i> Salvar</button>
+      <button class="btn btn-p btn-w" onclick="salvarPerfil()"><span class="ic">✓</span> Salvar</button>
     </div>
     <div style="margin-top:.75rem" id="shPerfilDelWrap"></div>
   </div>
 </div>
 
-<!-- SHEET: COBRANÇA -->
+<!-- SHEET COBRANÇA -->
 <div class="backdrop" id="sheetCobranca" onclick="if(event.target===this)closeSheet('sheetCobranca')">
   <div class="sheet">
     <div class="sh-handle"></div>
@@ -290,96 +322,187 @@ body{font-family:-apple-system,'Segoe UI',system-ui,sans-serif;background:var(--
     <div class="field"><textarea id="cobrancaTxt" rows="7"></textarea></div>
     <div class="g2">
       <button class="btn btn-w" onclick="closeSheet('sheetCobranca')">Fechar</button>
-      <button class="btn btn-p btn-w" onclick="copiarCobranca()"><i class="ti ti-copy"></i> Copiar</button>
+      <button class="btn btn-p btn-w" onclick="copiarCobranca()"><span class="ic">⧉</span> Copiar</button>
     </div>
   </div>
 </div>
 
-<div class="toast" id="toast"><i class="ti ti-check"></i><span id="toastMsg"></span></div>
+<div class="toast" id="toast"><span class="ic">✓</span><span id="toastMsg"></span></div>
 
 <script>
-// =====================================================================
-// STORAGE HELPERS
-// =====================================================================
+// ============================================================
+// CONFIG SUPABASE
+// ============================================================
+const SB_URL = 'https://zekghawgvimwhaimfnlk.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpla2doYXdndmltd2hhaW1mbmxrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAyODA1OTMsImV4cCI6MjEwNTg1NjU5M30.8qEcM1CRBMt8ctxoIZOv7YU0dsi6upURQ16T5EYaCw0';
+
+let sbOnline = false;
+let erroConexao = '';
+
+async function sbFetch(path, opts={}) {
+  const r = await fetch(SB_URL + path, {
+    ...opts,
+    headers: {
+      'apikey': SB_KEY,
+      'Authorization': 'Bearer ' + SB_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': opts.prefer || '',
+      ...(opts.headers||{})
+    }
+  });
+  if (!r.ok) { const t = await r.text(); throw new Error(t); }
+  const ct = r.headers.get('content-type')||'';
+  return ct.includes('json') ? r.json() : null;
+}
+
+async function sbGet(table, params='') {
+  return sbFetch(`/rest/v1/${table}?${params}`);
+}
+async function sbPost(table, body, prefer='return=representation') {
+  return sbFetch(`/rest/v1/${table}`, { method:'POST', body: JSON.stringify(body), prefer, headers:{'Prefer': prefer} });
+}
+async function sbPatch(table, filter, body) {
+  return sbFetch(`/rest/v1/${table}?${filter}`, { method:'PATCH', body: JSON.stringify(body), prefer:'return=representation', headers:{'Prefer':'return=representation'} });
+}
+async function sbDelete(table, filter) {
+  return sbFetch(`/rest/v1/${table}?${filter}`, { method:'DELETE' });
+}
+async function sbUpsert(table, body) {
+  return sbFetch(`/rest/v1/${table}`, { method:'POST', body: JSON.stringify(body), prefer:'resolution=merge-duplicates', headers:{'Prefer':'resolution=merge-duplicates,return=representation'} });
+}
+
+// ============================================================
+// LOCAL STORAGE FALLBACK
+// ============================================================
 const LS = {
   get: k => { try{ return JSON.parse(localStorage.getItem(k)); }catch{ return null; } },
   set: (k,v) => localStorage.setItem(k, JSON.stringify(v)),
-  del: k => localStorage.removeItem(k)
 };
 
-// =====================================================================
-// INIT — perfis padrão (você + jhones)
-// =====================================================================
-function initApp(){
-  let perfis = LS.get('cf_perfis');
-  if(!perfis){
-    perfis = [
-      { id:'voce',   nome:'Você',   cor:'#185FA5', admin:true  },
-      { id:'jhones', nome:'Jhones', cor:'#2a7a3b', admin:false }
-    ];
-    LS.set('cf_perfis', perfis);
-    LS.set('cf_senha_voce',   '3012');
-    LS.set('cf_senha_jhones', 'Jh@2026');
-    // cartões padrão para cada perfil
-    LS.set('cf_cartoes_voce', [
-      {id:'nb', nome:'Nubank',     fecha:1,  cor:'#9f1a1a'},
-      {id:'pb', nome:'Porto Bank', fecha:4,  cor:'#1a4a9f'},
-      {id:'pp', nome:'PicPay',     fecha:4,  cor:'#0f6e37'},
-      {id:'fx', nome:'Fixo',       fecha:0,  cor:'#7a1a9f'},
-      {id:'db', nome:'Débito/Din', fecha:0,  cor:'#7a4a1a'},
-    ]);
-    LS.set('cf_cartoes_jhones', [
-      {id:'fx', nome:'Fixo',       fecha:0,  cor:'#7a1a9f'},
-      {id:'db', nome:'Débito/Din', fecha:0,  cor:'#7a4a1a'},
-    ]);
-  }
-  renderLogin();
-}
+// ============================================================
+// ESTADO
+// ============================================================
+let perfilAtivo = null, perfisCache = [], cartoesCache = [], lancCache = [], rendaCache = {sal:0,bon:0};
 
-// =====================================================================
+// ============================================================
 // MESES
-// =====================================================================
+// ============================================================
 const MESES_NOME = {1:'Janeiro',2:'Fevereiro',3:'Março',4:'Abril',5:'Maio',6:'Junho',7:'Julho',8:'Agosto',9:'Setembro',10:'Outubro',11:'Novembro',12:'Dezembro'};
-const MESES_OPCOES = ['06.2026','07.2026','08.2026','09.2026','10.2026','11.2026','12.2026','01.2027','02.2027','03.2027'];
+// Gera a lista de meses: 6 meses atrás até 18 à frente do mês atual
+function gerarMeses(){
+  const hoje = new Date(), out = [];
+  let m = hoje.getMonth() + 1 - 6, a = hoje.getFullYear();
+  while(m <= 0){ m += 12; a -= 1; }
+  for(let i = 0; i < 25; i++){
+    out.push(`${String(m).padStart(2,'0')}.${a}`);
+    m++; if(m > 12){ m = 1; a++; }
+  }
+  return out;
+}
+let MESES_OPCOES = gerarMeses();
+function mesAtual(){
+  const h = new Date();
+  return `${String(h.getMonth()+1).padStart(2,'0')}.${h.getFullYear()}`;
+}
 
 function mesLabel(m){ const [mm,aa]=m.split('.'); return MESES_NOME[parseInt(mm)]+' '+aa; }
-function getMesAtual(){ return document.getElementById('selMes').value; }
-function proximoMes(m){
-  const [mm,aa]=m.split('.').map(Number);
-  const nm=mm===12?1:mm+1, na=mm===12?aa+1:aa;
-  return `${String(nm).padStart(2,'0')}.${na}`;
+function getMes(){ return document.getElementById('selMes').value; }
+function proximoMes(m){ const [mm,aa]=m.split('.').map(Number); const nm=mm===12?1:mm+1, na=mm===12?aa+1:aa; return `${String(nm).padStart(2,'0')}.${na}`; }
+
+function autoMesPag(){
+  const cid = document.getElementById('fCartao').value;
+  const c = cartoesCache.find(x=>x.id===cid);
+  if(!c||c.fecha===0){ document.getElementById('fMesPag').value=getMes(); return; }
+  const hoje = new Date();
+  const dia = hoje.getDate();
+  const mes = getMes();
+  if(dia >= c.fecha){ document.getElementById('fMesPag').value = proximoMes(mes); }
+  else { document.getElementById('fMesPag').value = mes; }
 }
-// dado cartao e data do gasto, retorna mes de pagamento
-function mesPagamento(cartaoId, dataGasto){
-  const cartoes = getCartoes();
-  const c = cartoes.find(x=>x.id===cartaoId);
-  if(!c||c.fecha===0) return getMesAtual(); // fixo/debito: mes atual
-  if(!dataGasto) return getMesAtual();
-  const [,, dd] = dataGasto.split('-').map(Number);
-  const [mm,aa] = getMesAtual().split('.').map(Number);
-  // se dia do gasto >= dia fechamento, vai pro próximo mês
-  if(dd >= c.fecha){
-    const nm=mm===12?1:mm+1, na=mm===12?aa+1:aa;
-    return `${String(nm).padStart(2,'0')}.${na}`;
+
+// ============================================================
+// UTILS
+// ============================================================
+const fmt = v => 'R$\u00a0'+Math.abs(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const isEu = r => (r||'').trim().toLowerCase()==='eu';
+const splitR = s => s?s.split(',').map(x=>x.trim()).filter(Boolean):['Eu'];
+
+function showToast(msg,ok=true){
+  const t=document.getElementById('toast');
+  t.style.background=ok?'var(--text)':'var(--red)';
+  document.getElementById('toastMsg').textContent=msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+function setSyncBadge(on){
+  const b=document.getElementById('syncBadge');
+  b.textContent = on ? '● Supabase' : '○ Offline';
+  b.className = 'sync-badge ' + (on?'sync-ok':'sync-off');
+  b.classList.remove('hidden');
+}
+
+// Aplica a cor do perfil como cor de destaque do app
+function aplicarCor(cor){
+  const r=document.documentElement.style;
+  if(cor){ r.setProperty('--blue',cor); r.setProperty('--blue-bg',cor+'22'); }
+  else { r.removeProperty('--blue'); r.removeProperty('--blue-bg'); }
+}
+
+function cartaoBadge(id){
+  const c=cartoesCache.find(x=>x.id===id)||{nome:id,cor:'#888'};
+  return `<span class="badge" style="background:${c.cor}22;color:${c.cor}">${c.nome}</span>`;
+}
+
+function nomesUsados(){
+  const set=new Set();
+  lancCache.forEach(l=>splitR(l.resp).forEach(r=>{ if(!isEu(r)) set.add(r); }));
+  return [...set].sort();
+}
+
+// ============================================================
+// INIT + LOGIN
+// ============================================================
+async function initApp(){
+  // Tenta carregar perfis do Supabase
+  try {
+    const data = await sbGet('perfis','select=id,nome,cor,admin,senha&order=nome');
+    perfisCache = data;
+    sbOnline = true;
+    // salva cache local
+    LS.set('cf_perfis_cache', perfisCache.map(p=>({id:p.id,nome:p.nome,cor:p.cor,admin:p.admin})));
+  } catch(e) {
+    sbOnline = false;
+    erroConexao = (e && e.message ? String(e.message) : String(e)).slice(0,160);
+    perfisCache = LS.get('cf_perfis_cache') || [];
   }
-  return getMesAtual();
+  setSyncBadge(sbOnline);
+  if(!sbOnline && !perfisCache.length){ mostrarErroConexao(); return; }
+  if(!sbOnline) document.querySelector('.login-sub').textContent = 'Sem conexão com o banco — usando dados salvos neste aparelho';
+  renderLoginGrid();
 }
 
-// =====================================================================
-// LOGIN
-// =====================================================================
-let perfilSel = null, perfilAtivo = null;
+function mostrarErroConexao(){
+  document.querySelector('.login-sub').textContent = '';
+  document.getElementById('profilesGrid').innerHTML =
+    '<div style="grid-column:1/-1;text-align:center;line-height:1.65;font-size:14px;color:var(--text2)">'+
+    '<strong style="color:var(--red);font-size:15px">Não consegui conectar ao banco de dados.</strong><br><br>'+
+    'Este app precisa estar hospedado num endereço próprio (GitHub Pages, Netlify) ou ser aberto a partir do arquivo salvo no aparelho.<br><br>'+
+    'A pré-visualização dentro do Claude bloqueia a conexão com o Supabase, então o login não funciona por aqui.'+
+    (erroConexao ? '<br><br><span style="font-size:12px;color:var(--text3)">Detalhe técnico: '+erroConexao+'</span>' : '')+'</div>';
+  document.querySelector('.lf').style.display = 'none';
+  document.querySelector('.btn-login').style.display = 'none';
+}
 
-function renderLogin(){
-  const perfis = LS.get('cf_perfis') || [];
-  const grid = document.getElementById('profilesGrid');
-  grid.innerHTML = perfis.map(p=>`
+function renderLoginGrid(){
+  document.getElementById('profilesGrid').innerHTML = perfisCache.map(p=>`
     <div class="profile-tile" id="lp-${p.id}" onclick="selPerfil('${p.id}')">
       <div class="av" style="background:${p.cor}">${p.nome[0].toUpperCase()}</div>
       <div class="pn">${p.nome}</div>
     </div>`).join('');
 }
 
+let perfilSel = null;
 function selPerfil(id){
   perfilSel=id;
   document.querySelectorAll('.profile-tile').forEach(b=>b.classList.remove('sel'));
@@ -388,112 +511,173 @@ function selPerfil(id){
   document.getElementById('loginSenha').focus();
 }
 
-function doLogin(){
+async function doLogin(){
   if(!perfilSel){ showToast('Selecione um perfil',false); return; }
-  const s=document.getElementById('loginSenha').value;
-  if(s !== (LS.get('cf_senha_'+perfilSel)||'')){
+  const s = document.getElementById('loginSenha').value;
+  let ok = false;
+
+  if(sbOnline){
+    // verifica senha no Supabase
+    try {
+      const res = await sbGet('perfis',`select=id,nome,cor,admin&id=eq.${perfilSel}&senha=eq.${encodeURIComponent(s)}`);
+      ok = res && res.length > 0;
+      if(ok){ perfisCache = perfisCache.map(p=>p.id===perfilSel?{...p,...res[0]}:p); }
+    } catch(e){ ok=false; }
+  } else {
+    const senhaLocal = LS.get('cf_senha_'+perfilSel)||'';
+    ok = !!senhaLocal && s === senhaLocal;
+    if(!senhaLocal){
+      const le = document.getElementById('loginErr');
+      le.textContent = 'Sem conexão com o banco — não dá para validar a senha aqui.';
+      le.style.display = 'block';
+      document.getElementById('loginSenha').value = ''; return;
+    }
+  }
+
+  if(!ok){
     document.getElementById('loginErr').style.display='block';
     document.getElementById('loginSenha').value=''; return;
   }
-  perfilAtivo=perfilSel;
-  document.getElementById('loginSenha').value='';
   document.getElementById('loginErr').style.display='none';
+  document.getElementById('loginSenha').value='';
+  perfilAtivo = perfilSel;
+  const p = perfisCache.find(x=>x.id===perfilAtivo)||{};
+
   document.getElementById('loginWrap').classList.add('hidden');
   document.getElementById('appWrap').classList.remove('hidden');
-  const p=getPerfil();
-  document.getElementById('tAv').style.background=p.cor;
-  document.getElementById('tAv').textContent=p.nome[0].toUpperCase();
-  document.getElementById('tNome').textContent=p.nome;
-  // meses
-  const sel=document.getElementById('selMes');
-  sel.innerHTML=MESES_OPCOES.map(m=>`<option value="${m}">${mesLabel(m)}</option>`).join('');
-  sel.value='07.2026';
-  loadAll(); renderAll();
+  document.getElementById('tAv').style.background = p.cor;
+  document.getElementById('tAv').textContent = p.nome[0].toUpperCase();
+  document.getElementById('tNome').textContent = p.nome;
+  aplicarCor(p.cor);
+
+  // popula seletor de meses (inclui meses que já têm dados no banco)
+  if(sbOnline){
+    try {
+      const todos = await sbGet('lancamentos',`select=mes_pag&perfil_id=eq.${perfilAtivo}`);
+      const extras = [...new Set(todos.map(x=>x.mes_pag))];
+      MESES_OPCOES = [...new Set([...MESES_OPCOES, ...extras])]
+        .sort((a,b)=>{const[ma,aa]=a.split('.'),[mb,ab]=b.split('.');return aa===ab?ma-mb:aa-ab;});
+    } catch(e){}
+  }
+  const sel = document.getElementById('selMes');
+  sel.innerHTML = MESES_OPCOES.map(m=>`<option value="${m}">${mesLabel(m)}</option>`).join('');
+  sel.value = MESES_OPCOES.includes(mesAtual()) ? mesAtual() : MESES_OPCOES[0];
+
+  await loadAll();
+  renderAll();
 }
 
 function sair(){
+  aplicarCor(null);
   perfilAtivo=null; perfilSel=null;
+  lancCache=[]; cartoesCache=[]; rendaCache={sal:0,bon:0};
   document.getElementById('appWrap').classList.add('hidden');
   document.getElementById('loginWrap').classList.remove('hidden');
   document.querySelectorAll('.profile-tile').forEach(b=>b.classList.remove('sel'));
-  renderLogin();
   setNav('inicio');
 }
 
-// =====================================================================
-// PERFIL / CARTOES HELPERS
-// =====================================================================
-function getPerfil(){ return (LS.get('cf_perfis')||[]).find(p=>p.id===perfilAtivo)||{}; }
-function getCartoes(){ return LS.get('cf_cartoes_'+perfilAtivo)||[]; }
-function saveCartoes(c){ LS.set('cf_cartoes_'+perfilAtivo,c); }
-function getCartao(id){ return getCartoes().find(c=>c.id===id)||{nome:id,cor:'#888',fecha:0}; }
-function cartaoBadge(id){ const c=getCartao(id); return `<span class="badge" style="background:${c.cor}22;color:${c.cor}">${c.nome}</span>`; }
-
-// =====================================================================
-// DADOS (lancamentos por perfil+mes)
-// =====================================================================
-let lancamentos = [];
-function dataKey(){ return `cf_lanc_${perfilAtivo}_${getMesAtual()}`; }
-function loadLanc(){ lancamentos = LS.get(dataKey())||[]; }
-function saveLanc(){ LS.set(dataKey(), lancamentos); }
-function loadAll(){ loadLanc(); loadRenda(); }
-
-// =====================================================================
-// RENDA
-// =====================================================================
-function loadRenda(){
-  const r=LS.get('cf_renda_'+perfilAtivo)||{sal:0,bon:0};
-  document.getElementById('rSal').value=r.sal;
-  document.getElementById('rBon').value=r.bon;
-}
-function saveRenda(){ LS.set('cf_renda_'+perfilAtivo,{sal:parseFloat(document.getElementById('rSal').value)||0,bon:parseFloat(document.getElementById('rBon').value)||0}); }
-function getRenda(){ return {sal:parseFloat(document.getElementById('rSal').value)||0,bon:parseFloat(document.getElementById('rBon').value)||0}; }
-
-// =====================================================================
-// UTIL
-// =====================================================================
-const fmt=v=>'R$\u00a0'+Math.abs(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
-const fmtS=v=>(v<0?'- ':'')+fmt(v);
-const isEu=r=>(r||'').trim().toLowerCase()==='eu';
-const splitR=s=>s?s.split(',').map(x=>x.trim()).filter(Boolean):['Eu'];
-
-function showToast(msg,ok=true){
-  const t=document.getElementById('toast'); t.style.background=ok?'var(--text)':'var(--red)';
-  document.getElementById('toastMsg').textContent=msg; t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),2500);
+// ============================================================
+// LOAD DATA
+// ============================================================
+async function loadAll(){
+  await Promise.all([loadCartoes(), loadLanc(), loadRenda()]);
 }
 
-// nomes já usados no mês (para sugestão de responsáveis)
-function nomesUsados(){
-  const set=new Set();
-  lancamentos.forEach(l=>splitR(l.resp).forEach(r=>{ if(!isEu(r)) set.add(r); }));
-  return [...set].sort();
+async function loadCartoes(){
+  if(sbOnline){
+    try {
+      cartoesCache = await sbGet('cartoes',`select=id,nome,fecha,cor,ordem&perfil_id=eq.${perfilAtivo}&nome=neq._ignorar_&order=ordem`);
+      LS.set('cf_cartoes_'+perfilAtivo, cartoesCache);
+      return;
+    } catch(e){}
+  }
+  cartoesCache = LS.get('cf_cartoes_'+perfilAtivo) || [];
 }
 
-// =====================================================================
+async function loadLanc(){
+  const mes = getMes();
+  if(sbOnline){
+    try {
+      const res = await sbGet('lancamentos',`select=*&perfil_id=eq.${perfilAtivo}&mes_pag=eq.${mes}&order=criado_em`);
+      lancCache = res.map(l=>({
+        id: l.id,
+        desc: l.descricao,
+        valor: parseFloat(l.valor),
+        cartao: l.cartao_id,
+        resp: l.resp,
+        parcAtual: l.parc_atual,
+        parcTotal: l.parc_total,
+        mesPag: l.mes_pag,
+        sit: l.sit,
+        tipo: l.tipo,
+        pagos: typeof l.pagos==='string'?JSON.parse(l.pagos):l.pagos||[]
+      }));
+      LS.set(`cf_lanc_${perfilAtivo}_${mes}`, lancCache);
+      return;
+    } catch(e){}
+  }
+  lancCache = LS.get(`cf_lanc_${perfilAtivo}_${mes}`) || [];
+}
+
+async function loadRenda(){
+  if(sbOnline){
+    try {
+      const res = await sbGet('rendas',`select=salario,bonus&perfil_id=eq.${perfilAtivo}`);
+      if(res && res.length>0){
+        rendaCache = {sal:parseFloat(res[0].salario), bon:parseFloat(res[0].bonus)};
+        LS.set('cf_renda_'+perfilAtivo, rendaCache);
+      } else {
+        rendaCache = LS.get('cf_renda_'+perfilAtivo)||{sal:0,bon:0};
+      }
+    } catch(e){ rendaCache = LS.get('cf_renda_'+perfilAtivo)||{sal:0,bon:0}; }
+  } else {
+    rendaCache = LS.get('cf_renda_'+perfilAtivo)||{sal:0,bon:0};
+  }
+  document.getElementById('rSal').value = rendaCache.sal||'';
+  document.getElementById('rBon').value = rendaCache.bon||'';
+}
+
+async function saveRenda(){
+  const sal = parseFloat(document.getElementById('rSal').value)||0;
+  const bon = parseFloat(document.getElementById('rBon').value)||0;
+  rendaCache = {sal,bon};
+  LS.set('cf_renda_'+perfilAtivo, rendaCache);
+  renderMetrics();
+  if(sbOnline){
+    try {
+      await sbUpsert('rendas',{perfil_id:perfilAtivo,salario:sal,bonus:bon});
+    } catch(e){}
+  }
+}
+
+// ============================================================
 // MÉTRICAS
-// =====================================================================
+// ============================================================
 function calcM(){
   let eu=0,rec=0,pessoas=[];
-  lancamentos.forEach(l=>{
+  lancCache.forEach(l=>{
     const rs=splitR(l.resp),parte=l.valor/rs.length;
     rs.forEach(r=>{ if(isEu(r)){eu+=parte;}else{rec+=parte;if(!pessoas.includes(r))pessoas.push(r);} });
   });
   return{eu,rec,pessoas};
 }
+
 function renderMetrics(){
-  const r=getRenda(),m=calcM(),renda=r.sal+r.bon,sobra=renda-m.eu;
+  const r=rendaCache,m=calcM(),renda=r.sal+r.bon,sobra=renda-m.eu;
   document.getElementById('sRenda').textContent=fmt(renda);
-  const sv=document.getElementById('sSobra'); sv.textContent=fmtS(sobra); sv.className='val '+(sobra>=0?'pos':'neg');
+  const sv=document.getElementById('sSobra');
+  sv.textContent=(sobra>=0?'':'-')+fmt(Math.abs(sobra));
+  sv.className='val '+(sobra>=0?'pos':'neg');
   document.getElementById('sSobraSub').textContent=sobra>=0?'após meus gastos':'acima da renda';
   document.getElementById('sMeus').textContent=fmt(m.eu);
   document.getElementById('sRec').textContent=fmt(m.rec);
   document.getElementById('sRecSub').textContent=m.pessoas.length?m.pessoas.slice(0,2).join(', ')+(m.pessoas.length>2?'...':''):'ninguém';
 }
 
-// =====================================================================
+// ============================================================
 // NAV
-// =====================================================================
+// ============================================================
 function setNav(id){
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active'));
@@ -504,80 +688,96 @@ function setNav(id){
   if(id==='config') renderConfig();
   window.scrollTo(0,0);
 }
-function trocarMes(){ loadLanc(); renderAll(); }
-function renderAll(){ renderMetrics(); renderInicio(); }
 
-// =====================================================================
-// TELA INÍCIO — lista completa do mês
-// =====================================================================
-function renderInicio(){
-  const el=document.getElementById('inicioLista');
-  if(!lancamentos.length){ el.innerHTML='<p class="empty">Sem lançamentos. Use o + para adicionar.</p>'; return; }
-  // agrupa por cartão
-  const cartoes=getCartoes();
-  const grupos={};
-  cartoes.forEach(c=>grupos[c.id]=[]);
-  lancamentos.forEach((l,i)=>{ if(!grupos[l.cartao]) grupos[l.cartao]=[]; grupos[l.cartao].push({...l,i}); });
-  let html='';
-  cartoes.forEach(c=>{
-    const items=grupos[c.id]||[]; if(!items.length)return;
-    const tot=items.reduce((s,l)=>s+l.valor,0);
-    html+=`<div class="grp"><div class="grp-hd"><span class="badge" style="background:${c.cor}22;color:${c.cor};font-size:13px;padding:4px 12px">${c.nome}</span><span style="font-weight:700;font-size:15px">${fmt(tot)}</span></div>`;
-    items.forEach(l=>{ html+=lancCard(l,true); });
-    html+='</div>';
-  });
-  el.innerHTML=html||'<p class="empty">Sem lançamentos.</p>';
+async function trocarMes(){
+  await loadLanc();
+  renderAll();
 }
 
-function lancCard(l, comAcoes){
-  const rs=splitR(l.resp), tags=rs.map(r=>`<span class="tag ${isEu(r)?'tag-eu':''}">${r}</span>`).join('');
+function renderAll(){
+  renderMetrics();
+  renderInicio();
+}
+
+// ============================================================
+// TELA INÍCIO
+// ============================================================
+function renderInicio(){
+  const el=document.getElementById('inicioLista');
+  if(!lancCache.length){el.innerHTML='<p class="empty">Sem lançamentos. Use o + para adicionar.</p>';return;}
+  const grupos={};
+  cartoesCache.forEach(c=>grupos[c.id]=[]);
+  lancCache.forEach((l,i)=>{if(!grupos[l.cartao])grupos[l.cartao]=[];grupos[l.cartao].push({...l,i});});
+  let html='';
+  cartoesCache.forEach(c=>{
+    const items=grupos[c.id]||[];if(!items.length)return;
+    const tot=items.reduce((s,l)=>s+l.valor,0);
+    html+=`<div class="grp"><div class="grp-hd">
+      <span class="badge" style="background:${c.cor}22;color:${c.cor};font-size:13px;padding:4px 12px">${c.nome}</span>
+      <span style="font-weight:700;font-size:15px">${fmt(tot)}</span>
+    </div>`;
+    items.forEach(l=>html+=lancCard(l));
+    html+='</div>';
+  });
+  // lançamentos sem cartão mapeado
+  const semCartao=lancCache.filter((l,i)=>!cartoesCache.find(c=>c.id===l.cartao)).map((l,i)=>({...l,i:lancCache.indexOf(l)}));
+  if(semCartao.length){
+    html+=`<div class="grp"><div class="grp-hd"><span class="badge" style="background:#88888822;color:#888">Outros</span></div>`;
+    semCartao.forEach(l=>html+=lancCard(l));
+    html+='</div>';
+  }
+  el.innerHTML=html;
+}
+
+function lancCard(l){
+  const rs=splitR(l.resp),tags=rs.map(r=>`<span class="tag ${isEu(r)?'tag-eu':''}">${r}</span>`).join('');
   const parc=l.parcTotal>1?`<span class="tag-p">${l.parcAtual}/${l.parcTotal}</span>`:'';
   const pp=rs.length>1?`<div class="lc-sub">cada: ${fmt(l.valor/rs.length)}</div>`:'';
-  const acoes=comAcoes?`<div class="lc-acts">
-    <button class="act" onclick="editarLanc(${l.i})"><i class="ti ti-pencil"></i> Editar</button>
-    <button class="act" onclick="passarMes(${l.i})"><i class="ti ti-arrow-right"></i> Próx. mês</button>
-    <button class="act red" onclick="delLanc(${l.i})"><i class="ti ti-trash"></i> Remover</button>
-  </div>`:'';
   return `<div class="lc">
     <div class="lc-row">
       <div class="lc-info"><div class="lc-desc">${l.desc}</div><div class="lc-meta">${parc} ${tags}</div></div>
       <div class="lc-r"><div class="lc-val">${fmt(l.valor)}</div>${pp}</div>
-    </div>${acoes}</div>`;
+    </div>
+    <div class="lc-acts">
+      <button class="act" onclick="editarLanc('${l.id||''}',${l.i})"><span class="ic">✎</span> Editar</button>
+      <button class="act" onclick="passarMes('${l.id||''}',${l.i})"><span class="ic">→</span> Próx. mês</button>
+      <button class="act red" onclick="delLanc('${l.id||''}',${l.i})"><span class="ic">🗑</span> Remover</button>
+    </div>
+  </div>`;
 }
 
-// =====================================================================
-// SHEET: NOVO / EDITAR LANCAMENTO
-// =====================================================================
-let editIdx=null, respAtual=[];
+// ============================================================
+// SHEET LANCAMENTO
+// ============================================================
+let editLancId=null, editLancIdx=null, respAtual=[];
 
 function openNovoLanc(){
-  editIdx=null; respAtual=[];
+  editLancId=null; editLancIdx=null; respAtual=[];
   document.getElementById('shLancTitulo').textContent='Nova despesa';
   document.getElementById('shLancBtn').textContent='Adicionar';
   document.getElementById('fDesc').value='';
   document.getElementById('fVal').value='';
   document.getElementById('fPA').value='1';
   document.getElementById('fPT').value='1';
-  // popula cartoes do perfil
-  const cartoes=getCartoes();
+  const cartoes=cartoesCache;
   document.getElementById('fCartao').innerHTML=cartoes.map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
-  // popula meses
   document.getElementById('fMesPag').innerHTML=MESES_OPCOES.map(m=>`<option value="${m}">${mesLabel(m)}</option>`).join('');
-  document.getElementById('fMesPag').value=getMesAtual();
+  document.getElementById('fMesPag').value=getMes();
+  autoMesPag();
   renderChips(); renderSugs();
   openSheet('sheetLanc');
-  document.getElementById('fDesc').focus();
+  setTimeout(()=>document.getElementById('fDesc').focus(),200);
 }
 
-function editarLanc(i){
-  const l=lancamentos[i]; editIdx=i; respAtual=splitR(l.resp);
+function editarLanc(id, i){
+  const l=lancCache[i]; editLancId=id||null; editLancIdx=i;
+  respAtual=splitR(l.resp);
   document.getElementById('shLancTitulo').textContent='Editar despesa';
   document.getElementById('shLancBtn').textContent='Salvar';
-  const cartoes=getCartoes();
-  document.getElementById('fCartao').innerHTML=cartoes.map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
+  document.getElementById('fCartao').innerHTML=cartoesCache.map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
   document.getElementById('fMesPag').innerHTML=MESES_OPCOES.map(m=>`<option value="${m}">${mesLabel(m)}</option>`).join('');
   document.getElementById('fCartao').value=l.cartao;
-  document.getElementById('fMesPag').value=l.mesPag||getMesAtual();
+  document.getElementById('fMesPag').value=l.mesPag||getMes();
   document.getElementById('fDesc').value=l.desc;
   document.getElementById('fVal').value=l.valor;
   document.getElementById('fPA').value=l.parcAtual||1;
@@ -586,82 +786,121 @@ function editarLanc(i){
   openSheet('sheetLanc');
 }
 
-function salvarLanc(){
+async function salvarLanc(){
   const desc=document.getElementById('fDesc').value.trim();
   const val=parseFloat(document.getElementById('fVal').value);
-  if(!desc||isNaN(val)||val<=0){ showToast('Preencha descrição e valor',false); return; }
-  if(!respAtual.length){ showToast('Adicione pelo menos uma pessoa',false); return; }
+  if(!desc||isNaN(val)||val<=0){showToast('Preencha descrição e valor',false);return;}
+  if(!respAtual.length){showToast('Adicione pelo menos uma pessoa',false);return;}
   const mesPag=document.getElementById('fMesPag').value;
   const entry={
-    desc, valor:val,
-    parcAtual:parseInt(document.getElementById('fPA').value)||1,
-    parcTotal:parseInt(document.getElementById('fPT').value)||1,
-    resp:respAtual.join(','),
-    cartao:document.getElementById('fCartao').value,
-    mesPag, sit:''
+    perfil_id: perfilAtivo,
+    mes_pag: mesPag,
+    descricao: desc,
+    valor: val,
+    cartao_id: document.getElementById('fCartao').value,
+    resp: respAtual.join(','),
+    parc_atual: parseInt(document.getElementById('fPA').value)||1,
+    parc_total: parseInt(document.getElementById('fPT').value)||1,
+    sit: '',
+    tipo: 'gasto',
+    pagos: '[]'
   };
-  // salva no mes de pagamento
-  const key=`cf_lanc_${perfilAtivo}_${mesPag}`;
-  const mesLancs=LS.get(key)||[];
-  if(editIdx!==null && mesPag===getMesAtual()){
-    lancamentos[editIdx]=entry; saveLanc(); showToast('Atualizado!');
-  } else if(editIdx!==null){
-    // removeu do mês atual e colocou em outro
-    lancamentos.splice(editIdx,1); saveLanc();
-    mesLancs.push(entry); LS.set(key,mesLancs); showToast('Movido para '+mesLabel(mesPag)+'!');
-  } else {
-    if(mesPag===getMesAtual()){ lancamentos.push(entry); saveLanc(); }
-    else{ mesLancs.push(entry); LS.set(key,mesLancs); showToast('Adicionado em '+mesLabel(mesPag)+'!'); }
-  }
-  closeSheet('sheetLanc'); renderAll();
+
+  try {
+    if(editLancId && sbOnline){
+      await sbPatch('lancamentos',`id=eq.${editLancId}`,entry);
+      showToast('Atualizado!');
+    } else if(editLancIdx!==null && !editLancId){
+      // offline edit: update local
+      const local=LS.get(`cf_lanc_${perfilAtivo}_${getMes()}`)||[];
+      local[editLancIdx]={...local[editLancIdx],...entry,desc:entry.descricao,cartao:entry.cartao_id,mesPag:entry.mes_pag,parcAtual:entry.parc_atual,parcTotal:entry.parc_total};
+      LS.set(`cf_lanc_${perfilAtivo}_${getMes()}`,local);
+      showToast('Atualizado (offline)!');
+    } else if(sbOnline){
+      await sbPost('lancamentos',entry,'return=representation');
+      showToast(mesPag===getMes()?'Adicionado!':'Adicionado em '+mesLabel(mesPag)+'!');
+    } else {
+      // offline add
+      const local=LS.get(`cf_lanc_${perfilAtivo}_${mesPag}`)||[];
+      local.push({desc:entry.descricao,valor:val,cartao:entry.cartao_id,resp:entry.resp,parcAtual:entry.parc_atual,parcTotal:entry.parc_total,mesPag,sit:'',tipo:'gasto',pagos:[]});
+      LS.set(`cf_lanc_${perfilAtivo}_${mesPag}`,local);
+      showToast('Adicionado (offline)!');
+    }
+  } catch(e){ showToast('Erro ao salvar: '+e.message,false); return; }
+
+  closeSheet('sheetLanc');
+  await loadLanc(); renderAll();
 }
 
-function delLanc(i){ if(!confirm('Remover?'))return; lancamentos.splice(i,1); saveLanc(); renderAll(); showToast('Removido.'); }
-
-function passarMes(i){
-  const l=lancamentos[i];
-  const prox=proximoMes(getMesAtual());
-  const optExists=MESES_OPCOES.includes(prox);
-  if(!optExists){ showToast('Próximo mês não disponível',false); return; }
-  const key=`cf_lanc_${perfilAtivo}_${prox}`;
-  const mesLancs=LS.get(key)||[];
-  if(mesLancs.find(x=>x.desc===l.desc&&x.cartao===l.cartao&&x.resp===l.resp)){ showToast('Já existe no próximo mês',false); return; }
-  const copia={...l, mesPag:prox, parcAtual:l.parcTotal>1?Math.max(1,l.parcAtual-1):l.parcAtual};
-  mesLancs.push(copia); LS.set(key,mesLancs);
-  showToast('Copiado para '+mesLabel(prox)+'!');
+async function delLanc(id, i){
+  if(!confirm('Remover este lançamento?'))return;
+  try {
+    if(id && sbOnline){ await sbDelete('lancamentos',`id=eq.${id}`); }
+    else {
+      const local=LS.get(`cf_lanc_${perfilAtivo}_${getMes()}`)||[];
+      local.splice(i,1); LS.set(`cf_lanc_${perfilAtivo}_${getMes()}`,local);
+    }
+    showToast('Removido.');
+  } catch(e){ showToast('Erro',false); return; }
+  await loadLanc(); renderAll();
 }
 
-// =====================================================================
+async function passarMes(id, i){
+  const l=lancCache[i], prox=proximoMes(getMes());
+  const entry={
+    perfil_id: perfilAtivo,
+    mes_pag: prox,
+    descricao: l.desc,
+    valor: l.valor,
+    cartao_id: l.cartao,
+    resp: l.resp,
+    parc_atual: l.parcTotal>1?Math.max(1,l.parcAtual-1):l.parcAtual,
+    parc_total: l.parcTotal,
+    sit: '',
+    tipo: l.tipo||'gasto',
+    pagos: '[]'
+  };
+  try {
+    if(sbOnline){ await sbPost('lancamentos',entry); }
+    else {
+      const local=LS.get(`cf_lanc_${perfilAtivo}_${prox}`)||[];
+      local.push({desc:l.desc,valor:l.valor,cartao:l.cartao,resp:l.resp,parcAtual:entry.parc_atual,parcTotal:l.parcTotal,mesPag:prox,sit:'',tipo:'gasto',pagos:[]});
+      LS.set(`cf_lanc_${perfilAtivo}_${prox}`,local);
+    }
+    showToast('Copiado para '+mesLabel(prox)+'!');
+  } catch(e){ showToast('Erro',false); }
+}
+
+// ============================================================
 // RESPONSÁVEIS
-// =====================================================================
+// ============================================================
 function addResp(nome){
-  const inp=document.getElementById('respInput'), n=(nome||inp.value).trim();
+  const inp=document.getElementById('respInput'),n=(nome||inp.value).trim();
   if(!n)return; if(!respAtual.includes(n)) respAtual.push(n);
   inp.value=''; renderChips(); renderSugs();
 }
 function remResp(n){ respAtual=respAtual.filter(x=>x!==n); renderChips(); renderSugs(); }
 function renderChips(){
   const val=parseFloat(document.getElementById('fVal').value)||0;
-  document.getElementById('chips').innerHTML=respAtual.map(n=>`<span class="chip">${n}<button onclick="remResp('${n}')">×</button></span>`).join('');
+  document.getElementById('chips').innerHTML=respAtual.map(n=>`<span class="chip">${n}<button onclick="remResp('${n.replace(/'/g,"\\'")}')" type="button">×</button></span>`).join('');
   const info=document.getElementById('respInfo');
-  if(respAtual.length>1&&val>0){const p=(val/respAtual.length).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});info.textContent=`Cada um paga R$ ${p}`;}
+  if(respAtual.length>1&&val>0){const p=(val/respAtual.length).toLocaleString('pt-BR',{minimumFractionDigits:2});info.textContent=`Cada um paga R$ ${p}`;}
   else info.textContent='';
 }
 function renderSugs(){
-  // nomes já usados no mês que não estão nos chips
   const usados=nomesUsados().filter(n=>!respAtual.includes(n)&&!isEu(n));
-  document.getElementById('respSugs').innerHTML=usados.map(n=>`<span class="resp-sug" onclick="addResp('${n}')">${n}</span>`).join('');
+  document.getElementById('respSugs').innerHTML=usados.map(n=>`<span class="resp-sug" onclick="addResp('${n.replace(/'/g,"\\'")}')">${n}</span>`).join('');
 }
 
-// =====================================================================
+// ============================================================
 // PESSOAS
-// =====================================================================
+// ============================================================
 function renderPessoas(){
   const filtro=(document.getElementById('filtroPessoa').value||'').toLowerCase();
   const porPessoa={};
-  lancamentos.forEach(l=>{
+  lancCache.forEach(l=>{
     const rs=splitR(l.resp),parte=l.valor/rs.length;
-    rs.forEach(r=>{ if(isEu(r))return; if(!porPessoa[r])porPessoa[r]=[]; porPessoa[r].push({...l,parte,totalResp:rs.length}); });
+    rs.forEach(r=>{ if(isEu(r))return; if(!porPessoa[r])porPessoa[r]=[]; porPessoa[r].push({...l,parte}); });
   });
   const nomes=Object.keys(porPessoa).filter(n=>!filtro||n.toLowerCase().includes(filtro)).sort();
   let totalGeral=0; nomes.forEach(n=>{totalGeral+=porPessoa[n].reduce((s,l)=>s+l.parte,0);});
@@ -671,17 +910,19 @@ function renderPessoas(){
     const itens=porPessoa[nome],total=itens.reduce((s,l)=>s+l.parte,0);
     return `<div class="pc">
       <div class="pc-hd">
-        <div class="pc-nm"><i class="ti ti-user" style="color:var(--blue)"></i>${nome}</div>
+        <div class="pc-nm"><span class="ic">👤</span>${nome}</div>
         <div style="text-align:right">
           <div style="font-size:18px;font-weight:700">${fmt(total)}</div>
-          <button class="btn btn-s btn-p" onclick="abrirCobranca('${nome}')" style="margin-top:4px"><i class="ti ti-message-2"></i> Cobrar</button>
+          <button class="btn btn-s btn-p" onclick="abrirCobranca('${nome.replace(/'/g,"\\'")}')" style="margin-top:4px"><span class="ic">💬</span> Cobrar</button>
         </div>
       </div>
       ${itens.map(l=>{
         const ps=l.parcTotal>1?`<span class="tag-p" style="margin-right:3px">${l.parcAtual}/${l.parcTotal}</span>`:'';
         return `<div class="pc-item">
-          <div><div style="font-size:14px">${l.desc}${l.totalResp>1?` <span style="font-size:12px;color:var(--text3)">(/${l.totalResp})</span>`:''}</div>
-          <div style="font-size:12px;color:var(--text2);margin-top:2px">${ps}${cartaoBadge(l.cartao)}</div></div>
+          <div>
+            <div style="font-size:14px">${l.desc}${splitR(l.resp).length>1?' <span style="font-size:12px;color:var(--text3)">(÷'+splitR(l.resp).length+')</span>':''}</div>
+            <div style="font-size:12px;color:var(--text2);margin-top:2px">${ps}${cartaoBadge(l.cartao)}</div>
+          </div>
           <div style="font-size:15px;font-weight:600">${fmt(l.parte)}</div>
         </div>`;}).join('')}
       <div style="padding:.875rem 1rem;background:var(--bg2);display:flex;justify-content:flex-end"><strong>Total: ${fmt(total)}</strong></div>
@@ -690,171 +931,342 @@ function renderPessoas(){
 }
 
 function abrirCobranca(nome){
-  const mes=getMesAtual(),mm=parseInt(mes.split('.')[0]),nomeMes=MESES_NOME[mm];
+  const mes=getMes(),mm=parseInt(mes.split('.')[0]),nomeMes=MESES_NOME[mm];
   const porPessoa={};
-  lancamentos.forEach(l=>{const rs=splitR(l.resp),parte=l.valor/rs.length;rs.forEach(r=>{if(isEu(r))return;if(!porPessoa[r])porPessoa[r]=[];porPessoa[r].push({...l,parte});});});
+  lancCache.forEach(l=>{const rs=splitR(l.resp),parte=l.valor/rs.length;rs.forEach(r=>{if(isEu(r))return;if(!porPessoa[r])porPessoa[r]=[];porPessoa[r].push({...l,parte});});});
   const itens=porPessoa[nome]||[],total=itens.reduce((s,l)=>s+l.parte,0);
   const linhas=itens.map(l=>{const parc=l.parcTotal>1?` (${l.parcAtual}/${l.parcTotal})`:'';return`- ${l.desc}${parc}: ${fmt(l.parte)}`;}).join('\n');
-  document.getElementById('cobrancaTxt').value=`Oi ${nome}!\n\nPassando para acertar as despesas de ${nomeMes}:\n\n${linhas}\n\nTotal: ${fmt(total)}\n\nQualquer dúvida é só falar!`;
+  document.getElementById('cobrancaTxt').value=`Oi ${nome}!\n\nPassando para acertar as despesas de ${nomeMes}:\n\n${linhas}\n\nTotal: ${fmt(total)}\n\nQualquer dúvida é só falar! 😊`;
   openSheet('sheetCobranca');
 }
-function copiarCobranca(){navigator.clipboard.writeText(document.getElementById('cobrancaTxt').value).then(()=>showToast('Copiado!')).catch(()=>showToast('Erro',false));}
+function copiarCobranca(){
+  navigator.clipboard.writeText(document.getElementById('cobrancaTxt').value)
+    .then(()=>showToast('Copiado!')).catch(()=>showToast('Erro',false));
+}
 
-// =====================================================================
-// CONFIG — cartões
-// =====================================================================
+// ============================================================
+// CONFIG — CARTÕES
+// ============================================================
 let editCartaoIdx=null;
-function renderConfig(){
-  const cartoes=getCartoes();
-  document.getElementById('configCartoes').innerHTML=cartoes.length?cartoes.map((c,i)=>`
-    <div style="display:flex;align-items:center;gap:8px;padding:.6rem 0;border-bottom:.5px solid var(--border)">
-      <span class="badge" style="background:${c.cor}22;color:${c.cor}">${c.nome}</span>
-      <span style="font-size:12px;color:var(--text2);flex:1">${c.fecha>0?'Fecha dia '+c.fecha:'Sem fechamento'}</span>
-      <button class="act" onclick="editCartao(${i})"><i class="ti ti-pencil"></i></button>
-    </div>`).join(''):'<p style="font-size:13px;color:var(--text2)">Nenhum cartão cadastrado.</p>';
-  // admin
-  const p=getPerfil();
+
+function resetCartaoForm(){
+  document.getElementById('shCartaoTitulo').textContent='Novo cartão';
+  document.getElementById('cNome').value='';
+  document.getElementById('cFecha').value='0';
+  document.getElementById('cCor').value='#185FA5';
+  document.getElementById('shCartaoDelWrap').innerHTML='';
+}
+
+async function renderConfig(){
+  document.getElementById('configCartoes').innerHTML = cartoesCache.length
+    ? cartoesCache.map((c,i)=>`
+      <div style="display:flex;align-items:center;gap:8px;padding:.6rem 0;border-bottom:.5px solid var(--border)">
+        <span class="badge" style="background:${c.cor}22;color:${c.cor}">${c.nome}</span>
+        <span style="font-size:12px;color:var(--text2);flex:1">${c.fecha>0?'Fecha dia '+c.fecha:'Sem fechamento'}</span>
+        <button class="act" onclick="editCartao(${i})"><span class="ic">✎</span></button>
+      </div>`).join('')
+    : '<p style="font-size:13px;color:var(--text2)">Nenhum cartão.</p>';
+
+  const p=perfisCache.find(x=>x.id===perfilAtivo)||{};
   if(p.admin){
     document.getElementById('adminPanel').style.display='block';
-    const perfis=LS.get('cf_perfis')||[];
-    document.getElementById('adminPerfis').innerHTML=perfis.map((pf,i)=>`
-      <div style="display:flex;align-items:center;gap:8px;padding:.6rem 0;border-bottom:.5px solid var(--border)">
-        <div class="av" style="background:${pf.cor};width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0">${pf.nome[0]}</div>
-        <span style="flex:1;font-size:14px">${pf.nome}${pf.admin?'<span class="admin-tag">Admin</span>':''}</span>
-        <button class="act" onclick="editPerfil(${i})"><i class="ti ti-pencil"></i></button>
-      </div>`).join('');
+    try {
+      const todos = sbOnline ? await sbGet('perfis','select=id,nome,cor,admin') : perfisCache;
+      document.getElementById('adminPerfis').innerHTML=todos.map((pf,i)=>`
+        <div style="display:flex;align-items:center;gap:8px;padding:.6rem 0;border-bottom:.5px solid var(--border)">
+          <div style="width:30px;height:30px;border-radius:50%;background:${pf.cor};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0">${pf.nome[0]}</div>
+          <span style="flex:1;font-size:14px">${pf.nome}${pf.admin?'<span class="admin-tag">Admin</span>':''}</span>
+          <button class="act" onclick="editPerfil('${pf.id}','${pf.nome}','${pf.cor}',${pf.admin})"><span class="ic">✎</span></button>
+        </div>`).join('');
+    } catch(e){}
   }
 }
 
 function editCartao(i){
   editCartaoIdx=i;
-  const c=getCartoes()[i];
+  const c=cartoesCache[i];
   document.getElementById('shCartaoTitulo').textContent='Editar cartão';
   document.getElementById('cNome').value=c.nome;
   document.getElementById('cFecha').value=c.fecha;
   document.getElementById('cCor').value=c.cor;
-  document.getElementById('shCartaoDelWrap').innerHTML=`<button class="btn btn-d btn-w" onclick="delCartao(${i})"><i class="ti ti-trash"></i> Remover cartão</button>`;
+  document.getElementById('shCartaoDelWrap').innerHTML=`<button class="btn btn-d btn-w" onclick="delCartao()"><span class="ic">🗑</span> Remover cartão</button>`;
   openSheet('sheetCartao');
 }
 
-function salvarCartao(){
+async function salvarCartao(){
   const nome=document.getElementById('cNome').value.trim();
   const fecha=parseInt(document.getElementById('cFecha').value)||0;
   const cor=document.getElementById('cCor').value.trim()||'#888';
   if(!nome){showToast('Informe o nome',false);return;}
-  const cartoes=getCartoes();
-  if(editCartaoIdx!==null){
-    cartoes[editCartaoIdx]={...cartoes[editCartaoIdx],nome,fecha,cor};
-  } else {
-    cartoes.push({id:'c'+Date.now(),nome,fecha,cor});
-  }
-  saveCartoes(cartoes); editCartaoIdx=null;
+
+  try {
+    if(editCartaoIdx!==null){
+      const c=cartoesCache[editCartaoIdx];
+      if(sbOnline){ await sbPatch('cartoes',`id=eq.${c.id}&perfil_id=eq.${perfilAtivo}`,{nome,fecha,cor}); }
+      cartoesCache[editCartaoIdx]={...c,nome,fecha,cor};
+    } else {
+      const novo={id:'c'+Date.now(),perfil_id:perfilAtivo,nome,fecha,cor,ordem:cartoesCache.length+1};
+      if(sbOnline){ await sbPost('cartoes',novo); }
+      cartoesCache.push(novo);
+    }
+    LS.set('cf_cartoes_'+perfilAtivo, cartoesCache);
+  } catch(e){ showToast('Erro ao salvar cartão',false); return; }
+
+  editCartaoIdx=null;
   closeSheet('sheetCartao'); renderConfig(); showToast('Cartão salvo!');
 }
 
-function delCartao(i){
-  if(!confirm('Remover cartão?'))return;
-  const cartoes=getCartoes(); cartoes.splice(i,1); saveCartoes(cartoes);
+async function delCartao(){
+  if(!confirm('Remover este cartão?'))return;
+  const c=cartoesCache[editCartaoIdx];
+  try {
+    if(sbOnline){ await sbDelete('cartoes',`id=eq.${c.id}&perfil_id=eq.${perfilAtivo}`); }
+    cartoesCache.splice(editCartaoIdx,1);
+    LS.set('cf_cartoes_'+perfilAtivo, cartoesCache);
+  } catch(e){ showToast('Erro',false); return; }
   editCartaoIdx=null; closeSheet('sheetCartao'); renderConfig(); showToast('Removido.');
 }
 
-// =====================================================================
-// CONFIG — admin perfis
-// =====================================================================
-let editPerfilIdx=null;
-function editPerfil(i){
-  editPerfilIdx=i;
-  const pf=(LS.get('cf_perfis')||[])[i];
-  document.getElementById('shPerfilTitulo').textContent='Editar perfil';
-  document.getElementById('npNome').value=pf.nome;
+// ============================================================
+// CONFIG — ADMIN PERFIS
+// ============================================================
+let editPerfilId=null;
+
+function resetPerfilForm(){
+  document.getElementById('shPerfilTitulo').textContent='Novo perfil';
+  document.getElementById('npNome').value='';
+  document.getElementById('npCor').value='#185FA5';
   document.getElementById('npSenha').value='';
-  document.getElementById('npAdmin').checked=pf.admin||false;
-  document.getElementById('shPerfilDelWrap').innerHTML=`<button class="btn btn-d btn-w" onclick="delPerfil(${i})"><i class="ti ti-trash"></i> Remover perfil</button>`;
+  document.getElementById('npAdmin').checked=false;
+  document.getElementById('shPerfilDelWrap').innerHTML='';
+  editPerfilId=null;
+}
+
+function editPerfil(id,nome,cor,admin){
+  editPerfilId=id;
+  document.getElementById('shPerfilTitulo').textContent='Editar perfil';
+  document.getElementById('npNome').value=nome;
+  document.getElementById('npCor').value=cor;
+  document.getElementById('npSenha').value='';
+  document.getElementById('npAdmin').checked=admin;
+  document.getElementById('shPerfilDelWrap').innerHTML=`<button class="btn btn-d btn-w" onclick="delPerfil('${id}')"><span class="ic">🗑</span> Remover perfil</button>`;
   openSheet('sheetNovoPerfil');
 }
 
-function salvarPerfil(){
+async function salvarPerfil(){
   const nome=document.getElementById('npNome').value.trim();
+  const cor=document.getElementById('npCor').value.trim()||'#185FA5';
   const senha=document.getElementById('npSenha').value;
   const admin=document.getElementById('npAdmin').checked;
   if(!nome){showToast('Informe o nome',false);return;}
-  const perfis=LS.get('cf_perfis')||[];
-  if(editPerfilIdx!==null){
-    perfis[editPerfilIdx]={...perfis[editPerfilIdx],nome,admin};
-    if(senha) LS.set('cf_senha_'+perfis[editPerfilIdx].id,senha);
-  } else {
-    if(!senha){showToast('Informe a senha',false);return;}
-    const id='u'+Date.now();
-    perfis.push({id,nome,cor:randomCor(),admin});
-    LS.set('cf_senha_'+id,senha);
-  }
-  LS.set('cf_perfis',perfis); editPerfilIdx=null;
-  closeSheet('sheetNovoPerfil'); renderConfig(); showToast('Perfil salvo!');
+
+  try {
+    if(editPerfilId){
+      const upd={nome,cor,admin};
+      if(senha) upd.senha=senha;
+      if(sbOnline){ await sbPatch('perfis',`id=eq.${editPerfilId}`,upd); }
+      perfisCache=perfisCache.map(p=>p.id===editPerfilId?{...p,...upd}:p);
+      LS.set('cf_perfis_cache', perfisCache);
+    } else {
+      if(!senha){showToast('Informe a senha',false);return;}
+      const novo={id:'u'+Date.now(),nome,cor,admin,senha};
+      if(sbOnline){ await sbPost('perfis',novo); }
+      perfisCache.push(novo);
+      LS.set('cf_perfis_cache', perfisCache);
+    }
+    showToast('Perfil salvo!');
+  } catch(e){ showToast('Erro: '+e.message,false); return; }
+
+  editPerfilId=null; closeSheet('sheetNovoPerfil'); renderConfig();
 }
 
-function delPerfil(i){
-  const perfis=LS.get('cf_perfis')||[];
-  if(perfis[i].id===perfilAtivo){showToast('Não pode remover o próprio perfil',false);return;}
-  if(!confirm('Remover perfil '+perfis[i].nome+'?'))return;
-  perfis.splice(i,1); LS.set('cf_perfis',perfis);
-  editPerfilIdx=null; closeSheet('sheetNovoPerfil'); renderConfig(); showToast('Perfil removido.');
+async function delPerfil(id){
+  if(id===perfilAtivo){showToast('Não pode remover o próprio perfil',false);return;}
+  if(!confirm('Remover perfil?'))return;
+  try {
+    if(sbOnline){ await sbDelete('perfis',`id=eq.${id}`); }
+    perfisCache=perfisCache.filter(p=>p.id!==id);
+    LS.set('cf_perfis_cache', perfisCache);
+    showToast('Perfil removido.');
+  } catch(e){ showToast('Erro',false); return; }
+  editPerfilId=null; closeSheet('sheetNovoPerfil'); renderConfig();
 }
 
-function randomCor(){ return ['#185FA5','#2a7a3b','#9f1a1a','#7a1a9f','#856404','#0f6e37'][Math.floor(Math.random()*6)]; }
-
-// =====================================================================
+// ============================================================
 // SENHA
-// =====================================================================
-function alterarSenha(){
+// ============================================================
+async function alterarSenha(){
   const atual=document.getElementById('cfgSenhaAtual').value;
   const nova=document.getElementById('cfgSenhaNova').value.trim();
   const msg=document.getElementById('cfgSenhaMsg');
-  if(atual!==LS.get('cf_senha_'+perfilAtivo)){msg.style.display='block';msg.style.color='var(--red)';msg.textContent='Senha atual incorreta.';return;}
+
+  let senhaOk=false;
+  if(sbOnline){
+    try {
+      const r=await sbGet('perfis',`select=id&id=eq.${perfilAtivo}&senha=eq.${encodeURIComponent(atual)}`);
+      senhaOk=r&&r.length>0;
+    } catch(e){}
+  } else {
+    senhaOk=(atual===(LS.get('cf_senha_'+perfilAtivo)||''));
+  }
+
+  if(!senhaOk){msg.style.display='block';msg.style.color='var(--red)';msg.textContent='Senha atual incorreta.';return;}
   if(nova.length<3){msg.style.display='block';msg.style.color='var(--red)';msg.textContent='Nova senha muito curta.';return;}
-  LS.set('cf_senha_'+perfilAtivo,nova);
-  document.getElementById('cfgSenhaAtual').value='';document.getElementById('cfgSenhaNova').value='';
-  msg.style.display='block';msg.style.color='var(--green)';msg.textContent='Senha alterada!';showToast('Senha alterada!');
+
+  try {
+    if(sbOnline){ await sbPatch('perfis',`id=eq.${perfilAtivo}`,{senha:nova}); }
+    LS.set('cf_senha_'+perfilAtivo,nova);
+    msg.style.display='block';msg.style.color='var(--green)';msg.textContent='Senha alterada!';
+    document.getElementById('cfgSenhaAtual').value='';document.getElementById('cfgSenhaNova').value='';
+    showToast('Senha alterada!');
+  } catch(e){ showToast('Erro',false); }
 }
 
-// =====================================================================
-// EXPORTAR
-// =====================================================================
+// ============================================================
+// EXPORTAR XLSX
+// ============================================================
 function exportXLSX(){
-  const mes=getMesAtual(),mm=parseInt(mes.split('.')[0]),nomeMes=MESES_NOME[mm];
-  const r=getRenda(),m=calcM(),rows=[];
-  const p=getPerfil();
+  const mes=getMes(),mm=parseInt(mes.split('.')[0]),nomeMes=MESES_NOME[mm];
+  const r=rendaCache,m=calcM(),rows=[];
+  const p=perfisCache.find(x=>x.id===perfilAtivo)||{nome:'?'};
   rows.push([p.nome.toUpperCase()+' - '+nomeMes.toUpperCase(),'','','','','','Renda',+(r.sal+r.bon).toFixed(2)]);
-  rows.push(['Descrição','Valor','Parcela','De quem?','Cartão','Sit.','Meus gastos',+m.eu.toFixed(2)]);
+  rows.push(['Descrição','Valor','Parcela','De quem?','Cartão','Mês pag.','Meus gastos',+m.eu.toFixed(2)]);
   rows.push(['','','','','','','Sobra',+((r.sal+r.bon)-m.eu).toFixed(2)]);rows.push([]);
-  const cartoes=getCartoes();
-  cartoes.forEach(c=>{
-    const items=lancamentos.filter(l=>l.cartao===c.id);if(!items.length)return;
+  cartoesCache.forEach(c=>{
+    const items=lancCache.filter(l=>l.cartao===c.id);if(!items.length)return;
     rows.push([c.nome]);rows.push(['Descrição','Valor','Parcela','De quem?','Mês pag.','Sit.']);
-    items.forEach(l=>{const parc=l.parcTotal>1?`${l.parcAtual} de ${l.parcTotal}`:'1';rows.push([l.desc,+l.valor.toFixed(2),parc,l.resp,mesLabel(l.mesPag||mes),l.sit||'']);});
+    items.forEach(l=>rows.push([l.desc,+l.valor.toFixed(2),l.parcTotal>1?`${l.parcAtual} de ${l.parcTotal}`:'1',l.resp,mesLabel(l.mesPag||mes),l.sit||'']));
     rows.push(['',+items.reduce((s,l)=>s+l.valor,0).toFixed(2)]);rows.push([]);
   });
-  const ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=[{wch:28},{wch:12},{wch:12},{wch:22},{wch:14},{wch:12},{wch:12},{wch:12}];
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[{wch:28},{wch:12},{wch:12},{wch:22},{wch:14},{wch:12},{wch:12},{wch:12}];
   const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,mes);
   XLSX.writeFile(wb,`CF_${p.nome}_${mes}.xlsx`);showToast('Exportado!');
 }
 
-// =====================================================================
+// ============================================================
 // SHEETS
-// =====================================================================
-function openSheet(id,_){document.getElementById(id).classList.add('open');}
-function closeSheet(id){document.getElementById(id).classList.remove('open');}
+// ============================================================
+// ============================================================
+// BACKUP — EXPORTAR / IMPORTAR
+// ============================================================
+async function exportarBackup(){
+  const msg = document.getElementById('backupMsg');
+  if(!sbOnline){ msg.style.color='var(--red)'; msg.textContent='Sem conexão com o banco — não dá para exportar agora.'; return; }
+  msg.style.color='var(--text2)'; msg.textContent='Baixando dados do banco...';
+  try{
+    const p = perfisCache.find(x=>x.id===perfilAtivo) || {};
+    const fl = p.admin ? '' : `&perfil_id=eq.${perfilAtivo}`;
+    const fp = p.admin ? '' : `&id=eq.${perfilAtivo}`;
+    const [perfis,cartoes,rendas,lancamentos] = await Promise.all([
+      sbGet('perfis',  `select=id,nome,cor,admin,senha${fp}&order=nome`),
+      sbGet('cartoes', `select=id,perfil_id,nome,fecha,cor,ordem${fl}&order=perfil_id,ordem`),
+      sbGet('rendas',  `select=perfil_id,salario,bonus${fl}`),
+      sbGet('lancamentos',`select=perfil_id,mes_pag,descricao,valor,cartao_id,resp,parc_atual,parc_total,sit,tipo,pagos${fl}&order=mes_pag`)
+    ]);
+    const obj = {formato:'cf-supabase-v1', exportado_em:new Date().toISOString(), perfis, cartoes, rendas, lancamentos};
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(obj,null,2)],{type:'application/json'}));
+    a.download = `backup-controle-financeiro-${new Date().toISOString().slice(0,10)}.json`;
+    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
+    const meses = [...new Set(lancamentos.map(l=>l.mes_pag))].length;
+    msg.style.color='var(--green)';
+    msg.textContent = `Backup gerado: ${lancamentos.length} lançamentos em ${meses} meses, ${cartoes.length} cartões, ${perfis.length} perfis.`;
+    showToast('Backup exportado!');
+  }catch(e){ msg.style.color='var(--red)'; msg.textContent='Erro ao exportar: '+e.message; }
+}
 
-// =====================================================================
-// INIT EVENTS
-// =====================================================================
+// Converte o backup antigo (chaves do localStorage) para o formato novo
+function converterBackupAntigo(d){
+  const MAPID = {u1790439694782:'henrique', hnerique:'henrique'};
+  const pid = x => MAPID[x] || x;
+  const J = v => { try{ return typeof v==='string' ? JSON.parse(v) : v; }catch(e){ return v; } };
+  const perfis=[], cartoes=[], rendas=[], lancamentos=[];
+  (J(d.cf_perfis)||[]).forEach(p=>{
+    const s = d['cf_senha_'+p.id];
+    perfis.push({id:pid(p.id), nome:(p.nome==='Hnerique'?'Henrique':p.nome), cor:p.cor||'#185FA5',
+                 admin:!!p.admin, senha: s===undefined?null:J(s)});
+  });
+  Object.keys(d).forEach(k=>{
+    let m;
+    if((m = k.match(/^cf_cartoes_(.+)$/))){
+      (J(d[k])||[]).forEach((c,i)=>cartoes.push({id:c.id, perfil_id:pid(m[1]), nome:c.nome,
+        fecha:+c.fecha||0, cor:c.cor||'#888888', ordem:i+1}));
+    } else if((m = k.match(/^cf_renda_(.+)$/))){
+      const r = J(d[k])||{};
+      rendas.push({perfil_id:pid(m[1]), salario:+r.sal||0, bonus:+r.bon||0});
+    } else if((m = k.match(/^cf_lanc_(.+)_(\d{2}\.\d{4})$/))){
+      (J(d[k])||[]).forEach(l=>lancamentos.push({
+        perfil_id:pid(m[1]), mes_pag:m[2], descricao:l.desc||'(sem descrição)', valor:+l.valor||0,
+        cartao_id:l.cartao||'db', resp:l.resp||'Eu', parc_atual:+l.parcAtual||1,
+        parc_total:+l.parcTotal||1, sit:l.sit||'', tipo:l.tipo||'gasto',
+        pagos:JSON.stringify(l.pagos||[])
+      }));
+    }
+  });
+  return {perfis,cartoes,rendas,lancamentos};
+}
+
+async function importarBackup(input){
+  const f = input.files && input.files[0];
+  input.value = '';
+  if(!f) return;
+  const msg = document.getElementById('backupMsg');
+  if(!sbOnline){ msg.style.color='var(--red)'; msg.textContent='Sem conexão com o banco — não dá para importar agora.'; return; }
+  let dados;
+  try{ dados = JSON.parse(await f.text()); }
+  catch(e){ msg.style.color='var(--red)'; msg.textContent='Esse arquivo não é um JSON válido.'; return; }
+
+  const b = (dados && dados.formato==='cf-supabase-v1') ? dados : converterBackupAntigo(dados);
+  if(!b.lancamentos || !b.lancamentos.length){
+    msg.style.color='var(--red)'; msg.textContent='Não encontrei lançamentos nesse arquivo.'; return;
+  }
+  const chaves = [...new Set(b.lancamentos.map(l=>l.perfil_id+'|'+l.mes_pag))];
+  const lista = [...new Set(b.lancamentos.map(l=>l.mes_pag))].sort().join(', ');
+  if(!confirm(`Importar ${b.lancamentos.length} lançamentos?\n\nOs meses contidos no arquivo serão SUBSTITUÍDOS:\n${lista}\n\nMeses fora dessa lista não são tocados.`)) { msg.textContent=''; return; }
+
+  msg.style.color='var(--text2)'; msg.textContent='Importando...';
+  try{
+    const ps = (b.perfis||[]).filter(p=>p.id&&p.nome).map(p=>{
+      const o = {id:p.id, nome:p.nome, cor:p.cor||'#185FA5', admin:!!p.admin};
+      if(p.senha) o.senha = p.senha;
+      return o;
+    });
+    if(ps.length) await sbUpsert('perfis', ps);
+    if((b.cartoes||[]).length) await sbUpsert('cartoes', b.cartoes);
+    if((b.rendas||[]).length)  await sbUpsert('rendas',  b.rendas);
+
+    for(const ch of chaves){
+      const i = ch.indexOf('|');
+      await sbDelete('lancamentos', `perfil_id=eq.${encodeURIComponent(ch.slice(0,i))}&mes_pag=eq.${encodeURIComponent(ch.slice(i+1))}`);
+    }
+    for(let i=0;i<b.lancamentos.length;i+=100){
+      await sbPost('lancamentos', b.lancamentos.slice(i,i+100), 'return=minimal');
+    }
+    msg.style.color='var(--green)';
+    msg.textContent = `Importado: ${b.lancamentos.length} lançamentos em ${chaves.length} meses.`;
+    showToast('Backup importado!');
+    MESES_OPCOES = [...new Set([...MESES_OPCOES, ...b.lancamentos.map(l=>l.mes_pag)])]
+      .sort((a,b2)=>{const[ma,aa]=a.split('.'),[mb,ab]=b2.split('.');return aa===ab?ma-mb:aa-ab;});
+    const sel=document.getElementById('selMes'), atual=sel.value;
+    sel.innerHTML = MESES_OPCOES.map(m=>`<option value="${m}">${mesLabel(m)}</option>`).join('');
+    sel.value = atual;
+    await loadAll(); renderAll(); renderConfig();
+  }catch(e){ msg.style.color='var(--red)'; msg.textContent='Erro ao importar: '+e.message; }
+}
+
+function openSheet(id){ document.getElementById(id).classList.add('open'); }
+function closeSheet(id){ document.getElementById(id).classList.remove('open'); }
+
+// ============================================================
+// EVENTS
+// ============================================================
 document.getElementById('respInput').addEventListener('keydown',e=>{if(e.key==='Enter'){addResp();e.preventDefault();}});
 document.getElementById('loginSenha').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
-// atualiza mês de pagamento ao trocar cartão
-document.getElementById('fCartao').addEventListener('change',()=>{
-  // sem data neste modelo, mas se tivesse: mesPag = mesPagamento(cartaoId, data)
-  // aqui fica no mês atual por padrão, usuário ajusta se quiser
-});
 
+// ============================================================
+// START
+// ============================================================
 initApp();
 </script>
 </body>
