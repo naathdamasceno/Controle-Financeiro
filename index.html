@@ -1097,15 +1097,25 @@ function escolherCat(c){
 
 function calcCategorias(){
   const map = {};
-  lancCache.forEach(l=>{
+  lancCache.forEach((l,idx)=>{
     const rs = splitR(l.resp);
     const valor = catModo==='meu' ? rs.filter(isEu).length * (l.valor/rs.length) : l.valor;
     if(valor <= 0) return;
     const c = l.categoria || 'Outros';
-    if(!map[c]) map[c] = {total:0, qtd:0};
+    if(!map[c]) map[c] = {total:0, qtd:0, itens:[]};
     map[c].total += valor; map[c].qtd++;
+    map[c].itens.push({...l, idx, parte:valor});
   });
-  return Object.keys(map).map(nome=>({nome, ...map[nome]})).sort((a,b)=>b.total-a.total);
+  return Object.keys(map).map(nome=>({nome, ...map[nome]}))
+    .sort((a,b)=>b.total-a.total)
+    .map(c=>({...c, itens:c.itens.sort((a,b)=>b.parte-a.parte)}));
+}
+
+// categorias abertas na tela
+let catAbertas = new Set();
+function toggleCat(nome){
+  if(catAbertas.has(nome)) catAbertas.delete(nome); else catAbertas.add(nome);
+  renderCategorias();
 }
 
 function setCatModo(m){
@@ -1127,17 +1137,44 @@ function renderCategorias(){
   // Uma cor só: o nome de cada categoria já identifica a barra, então cor
   // por categoria seria decorativa. O valor e o nome ficam fora da barra.
   el.innerHTML = lista.map(c=>{
-    const pct  = total ? c.total/total*100 : 0;
-    const larg = maior ? c.total/maior*100 : 0;
+    const pct   = total ? c.total/total*100 : 0;
+    const larg  = maior ? c.total/maior*100 : 0;
+    const aberta= catAbertas.has(c.nome);
+    const nomeJS= c.nome.replace(/'/g,"\\'");
+    const detalhe = !aberta ? '' : `
+      <div style="margin-top:.7rem;border-left:2px solid var(--border);padding-left:.7rem">
+        ${c.itens.map(l=>{
+          const parc = l.parcTotal>1 ? `<span class="tag-p" style="margin-right:4px">${l.parcAtual}/${l.parcTotal}</span>` : '';
+          const rs   = splitR(l.resp);
+          const tags = rs.map(r=>`<span class="tag ${isEu(r)?'tag-eu':''}">${r}</span>`).join('');
+          const div  = (catModo==='meu' && rs.length>1) ? ` <span style="color:var(--text3)">(÷${rs.length})</span>` : '';
+          return `<div style="padding:.55rem 0;border-bottom:.5px solid var(--border)">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px">
+              <span style="font-size:13px">${l.desc}${div}</span>
+              <span style="font-size:13px;font-weight:600;white-space:nowrap">${fmt(l.parte)}</span>
+            </div>
+            <div style="font-size:11px;color:var(--text2);margin-top:4px">${parc}${cartaoBadge(l.cartao)} ${tags}</div>
+            <div class="lc-acts" style="margin-top:.45rem;padding-top:.45rem">
+              <button class="act" onclick="editarLanc('${l.id||''}',${l.idx})"><span class="ic">✎</span> Editar</button>
+              <button class="act red" onclick="delLanc('${l.id||''}',${l.idx})"><span class="ic">🗑</span> Remover</button>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>`;
     return `<div style="margin-bottom:1rem">
-      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:6px">
-        <span style="font-size:14px;font-weight:500">${c.nome}</span>
-        <span style="font-size:14px;font-weight:700;white-space:nowrap">${fmt(c.total)}</span>
+      <div onclick="toggleCat('${nomeJS}')" style="cursor:pointer">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:6px">
+          <span style="font-size:14px;font-weight:500">
+            <span class="ic" style="display:inline-block;width:13px;font-size:10px;color:var(--text3);transform:rotate(${aberta?90:0}deg)">▶</span>${c.nome}
+          </span>
+          <span style="font-size:14px;font-weight:700;white-space:nowrap">${fmt(c.total)}</span>
+        </div>
+        <div style="height:8px;background:var(--bg3);border-radius:4px;overflow:hidden">
+          <div style="height:100%;width:${larg.toFixed(1)}%;background:var(--blue);border-radius:4px"></div>
+        </div>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">${pct.toFixed(1)}% · ${c.qtd} ${c.qtd===1?'lançamento':'lançamentos'}${aberta?'':' · toque para abrir'}</div>
       </div>
-      <div style="height:8px;background:var(--bg3);border-radius:4px;overflow:hidden">
-        <div style="height:100%;width:${larg.toFixed(1)}%;background:var(--blue);border-radius:4px"></div>
-      </div>
-      <div style="font-size:11px;color:var(--text3);margin-top:4px">${pct.toFixed(1)}% · ${c.qtd} ${c.qtd===1?'lançamento':'lançamentos'}</div>
+      ${detalhe}
     </div>`;
   }).join('');
 }
