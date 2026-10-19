@@ -805,13 +805,56 @@ async function delEntrada(i){
 // ============================================================
 // MÉTRICAS
 // ============================================================
+function pagosDe(l){ return Array.isArray(l.pagos) ? l.pagos : []; }
+
 function calcM(){
-  let eu=0,rec=0,pessoas=[];
+  let eu=0,rec=0,recebido=0,pessoas=[];
   lancCache.forEach(l=>{
-    const rs=splitR(l.resp),parte=l.valor/rs.length;
-    rs.forEach(r=>{ if(isEu(r)){eu+=parte;}else{rec+=parte;if(!pessoas.includes(r))pessoas.push(r);} });
+    const rs=splitR(l.resp),parte=l.valor/rs.length,pg=pagosDe(l);
+    rs.forEach(r=>{
+      if(isEu(r)){ eu+=parte; }
+      else if(pg.includes(r)){ recebido+=parte; }
+      else { rec+=parte; if(!pessoas.includes(r)) pessoas.push(r); }
+    });
   });
-  return{eu,rec,pessoas};
+  return{eu,rec,recebido,pessoas};
+}
+
+// marca/desmarca que uma pessoa já acertou um lançamento
+async function togglePago(idx, nome){
+  const l = lancCache[idx];
+  if(!l) return;
+  const atuais = [...pagosDe(l)];
+  const i = atuais.indexOf(nome);
+  if(i>=0) atuais.splice(i,1); else atuais.push(nome);
+  try{
+    if(l.id && sbOnline) await sbPatch('lancamentos',`id=eq.${l.id}`,{pagos:JSON.stringify(atuais)});
+    l.pagos = atuais;
+    const local = LS.get(`cf_lanc_${perfilAtivo}_${getMes()}`) || [];
+    if(local[idx]){ local[idx].pagos = atuais; LS.set(`cf_lanc_${perfilAtivo}_${getMes()}`, local); }
+    showToast(i>=0 ? nome+' voltou a dever' : 'Recebido de '+nome+'!');
+  }catch(e){ showToast('Erro ao salvar',false); return; }
+  renderAll();
+}
+
+// acerta de uma vez tudo o que a pessoa deve no mês
+async function receberTudo(nome){
+  const pend = [];
+  lancCache.forEach((l,idx)=>{
+    if(splitR(l.resp).some(r=>!isEu(r)&&r===nome) && !pagosDe(l).includes(nome)) pend.push({l,idx});
+  });
+  if(!pend.length){ showToast('Nada pendente de '+nome); return; }
+  if(!confirm(`Marcar como recebido tudo o que ${nome} deve neste mês?\n\n${pend.length} ${pend.length===1?'lançamento':'lançamentos'}.`)) return;
+  try{
+    for(const {l} of pend){
+      const atuais = [...pagosDe(l), nome];
+      if(l.id && sbOnline) await sbPatch('lancamentos',`id=eq.${l.id}`,{pagos:JSON.stringify(atuais)});
+      l.pagos = atuais;
+    }
+    LS.set(`cf_lanc_${perfilAtivo}_${getMes()}`, lancCache);
+    showToast('Tudo de '+nome+' recebido!');
+  }catch(e){ showToast('Erro ao salvar',false); }
+  renderAll();
 }
 
 function renderMetrics(){
@@ -826,7 +869,9 @@ function renderMetrics(){
   document.getElementById('sSobraSub').textContent=sobra>=0?'após meus gastos':'acima da renda';
   document.getElementById('sMeus').textContent=fmt(m.eu);
   document.getElementById('sRec').textContent=fmt(m.rec);
-  document.getElementById('sRecSub').textContent=m.pessoas.length?m.pessoas.slice(0,2).join(', ')+(m.pessoas.length>2?'...':''):'ninguém';
+  document.getElementById('sRecSub').textContent =
+    m.pessoas.length ? m.pessoas.slice(0,2).join(', ')+(m.pessoas.length>2?'...':'')
+    : (m.recebido>0 ? 'tudo recebido' : 'ninguém');
 }
 
 // ============================================================
@@ -1190,35 +1235,51 @@ function renderPessoas(){
     rs.forEach(r=>{ if(isEu(r))return; if(!porPessoa[r])porPessoa[r]=[]; porPessoa[r].push({...l,parte,idx}); });
   });
   const nomes=Object.keys(porPessoa).filter(n=>!filtro||n.toLowerCase().includes(filtro)).sort();
-  let totalGeral=0; nomes.forEach(n=>{totalGeral+=porPessoa[n].reduce((s,l)=>s+l.parte,0);});
-  document.getElementById('pessoasTotal').textContent=nomes.length?`Total a receber: ${fmt(totalGeral)}`:'';
+  let totalGeral=0, totalRecebido=0;
+  nomes.forEach(n=>porPessoa[n].forEach(l=>{
+    if(pagosDe(l).includes(n)) totalRecebido+=l.parte; else totalGeral+=l.parte;
+  }));
+  document.getElementById('pessoasTotal').textContent = nomes.length
+    ? `Falta receber: ${fmt(totalGeral)}` + (totalRecebido>0 ? `  ·  já recebido: ${fmt(totalRecebido)}` : '')
+    : '';
   if(!nomes.length){document.getElementById('pessoasLista').innerHTML='<p class="empty">Nenhuma pessoa encontrada.</p>';return;}
   document.getElementById('pessoasLista').innerHTML=nomes.map(nome=>{
-    const itens=porPessoa[nome],total=itens.reduce((s,l)=>s+l.parte,0);
+    const itens=porPessoa[nome];
+    const nomeJS=nome.replace(/'/g,"\\'");
+    const falta=itens.filter(l=>!pagosDe(l).includes(nome)).reduce((s,l)=>s+l.parte,0);
+    const pago =itens.filter(l=> pagosDe(l).includes(nome)).reduce((s,l)=>s+l.parte,0);
     return `<div class="pc">
       <div class="pc-hd">
         <div class="pc-nm"><span class="ic">👤</span>${nome}</div>
         <div style="text-align:right">
-          <div style="font-size:18px;font-weight:700">${fmt(total)}</div>
-          <button class="btn btn-s btn-p" onclick="abrirCobranca('${nome.replace(/'/g,"\\'")}')" style="margin-top:4px"><span class="ic">💬</span> Cobrar</button>
+          <div style="font-size:18px;font-weight:700" class="${falta>0?'':'pos'}">${fmt(falta)}</div>
+          ${pago>0?`<div style="font-size:11px;color:var(--green)">já recebido ${fmt(pago)}</div>`:''}
+          <div style="display:flex;gap:5px;margin-top:5px;justify-content:flex-end">
+            ${falta>0?`<button class="btn btn-s" onclick="receberTudo('${nomeJS}')"><span class="ic">✓</span> Recebi tudo</button>`:''}
+            <button class="btn btn-s btn-p" onclick="abrirCobranca('${nomeJS}')"><span class="ic">💬</span> Cobrar</button>
+          </div>
         </div>
       </div>
       ${itens.map(l=>{
         const ps=l.parcTotal>1?`<span class="tag-p" style="margin-right:3px">${l.parcAtual}/${l.parcTotal}</span>`:'';
-        return `<div class="pc-item" style="display:block">
+        const jaPagou = pagosDe(l).includes(nome);
+        return `<div class="pc-item" style="display:block${jaPagou?';opacity:.6':''}">
           <div style="display:flex;align-items:center;justify-content:space-between;gap:.75rem">
             <div>
-              <div style="font-size:14px">${l.desc}${splitR(l.resp).length>1?' <span style="font-size:12px;color:var(--text3)">(÷'+splitR(l.resp).length+')</span>':''}</div>
+              <div style="font-size:14px">${jaPagou?'<span style="color:var(--green)">✓ </span>':''}${l.desc}${splitR(l.resp).length>1?' <span style="font-size:12px;color:var(--text3)">(÷'+splitR(l.resp).length+')</span>':''}</div>
               <div style="font-size:12px;color:var(--text2);margin-top:2px">${ps}${cartaoBadge(l.cartao)}</div>
             </div>
-            <div style="font-size:15px;font-weight:600;white-space:nowrap">${fmt(l.parte)}</div>
+            <div style="font-size:15px;font-weight:600;white-space:nowrap${jaPagou?';text-decoration:line-through':''}">${fmt(l.parte)}</div>
           </div>
           <div class="lc-acts" style="margin-top:.55rem;padding-top:.55rem">
+            <button class="act" onclick="togglePago(${l.idx},'${nomeJS}')">${jaPagou?'<span class="ic">↩</span> Desfazer':'<span class="ic">✓</span> Recebido'}</button>
             <button class="act" onclick="editarLanc('${l.id||''}',${l.idx})"><span class="ic">✎</span> Editar</button>
             <button class="act red" onclick="delLanc('${l.id||''}',${l.idx})"><span class="ic">🗑</span> Remover</button>
           </div>
         </div>`;}).join('')}
-      <div style="padding:.875rem 1rem;background:var(--bg2);display:flex;justify-content:flex-end"><strong>Total: ${fmt(total)}</strong></div>
+      <div style="padding:.875rem 1rem;background:var(--bg2);display:flex;justify-content:flex-end">
+        <strong>${falta>0?'Falta: '+fmt(falta):'Tudo acertado'}</strong>
+      </div>
     </div>`;
   }).join('');
 }
@@ -1227,7 +1288,10 @@ function abrirCobranca(nome){
   const mes=getMes(),mm=parseInt(mes.split('.')[0]),nomeMes=MESES_NOME[mm];
   const porPessoa={};
   lancCache.forEach(l=>{const rs=splitR(l.resp),parte=l.valor/rs.length;rs.forEach(r=>{if(isEu(r))return;if(!porPessoa[r])porPessoa[r]=[];porPessoa[r].push({...l,parte});});});
-  const itens=porPessoa[nome]||[],total=itens.reduce((s,l)=>s+l.parte,0);
+  // só cobra o que ainda não foi acertado
+  const itens=(porPessoa[nome]||[]).filter(l=>!pagosDe(l).includes(nome));
+  const total=itens.reduce((s,l)=>s+l.parte,0);
+  if(!itens.length){ showToast(nome+' já acertou tudo neste mês'); return; }
   const linhas=itens.map(l=>{const parc=l.parcTotal>1?` (${l.parcAtual}/${l.parcTotal})`:'';return`- ${l.desc}${parc}: ${fmt(l.parte)}`;}).join('\n');
   document.getElementById('cobrancaTxt').value=`Oi ${nome}!\n\nPassando para acertar as despesas de ${nomeMes}:\n\n${linhas}\n\nTotal: ${fmt(total)}\n\nQualquer dúvida é só falar! 😊`;
   openSheet('sheetCobranca');
