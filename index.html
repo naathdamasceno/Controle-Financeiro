@@ -199,6 +199,7 @@ body{font-family:-apple-system,'Segoe UI',system-ui,sans-serif;background:var(--
         <div class="panel-hd"><span>Entradas do mês</span>
           <button class="btn btn-s btn-p" onclick="openNovaEntrada()"><span class="ic">+</span> Nova entrada</button>
         </div>
+        <div id="metaBox" style="margin-bottom:.9rem"></div>
         <div id="entLista"></div>
       </div>
       <div class="panel-hd" style="padding:.25rem .25rem .5rem">Gastos do mês</div>
@@ -283,8 +284,13 @@ body{font-family:-apple-system,'Segoe UI',system-ui,sans-serif;background:var(--
     <div class="g2">
       <div class="field"><label>Valor total (R$)</label><input type="number" id="fVal" placeholder="0,00" step="0.01" min="0" oninput="renderChips()"></div>
       <div class="field"><label>Parcela (atual / total)</label>
-        <div class="parc-row"><input type="number" id="fPA" value="1" min="1"><span>de</span><input type="number" id="fPT" value="1" min="1"></div>
+        <div class="parc-row"><input type="number" id="fPA" value="1" min="1" oninput="previewRep()"><span>de</span><input type="number" id="fPT" value="1" min="1" oninput="previewRep()"></div>
       </div>
+    </div>
+    <div class="field" id="repWrap">
+      <label>Lançar em quantos meses seguidos?</label>
+      <input type="number" id="fRep" value="1" min="1" max="36" oninput="previewRep()">
+      <div class="resp-info" id="repInfo"></div>
     </div>
     <div class="field">
       <label>De quem? <span style="font-weight:400;color:var(--text3);font-size:12px">(dividido igualmente)</span></label>
@@ -449,6 +455,8 @@ function mesAtual(){
 function mesLabel(m){ const [mm,aa]=m.split('.'); return MESES_NOME[parseInt(mm)]+' '+aa; }
 function getMes(){ return document.getElementById('selMes').value; }
 function proximoMes(m){ const [mm,aa]=m.split('.').map(Number); const nm=mm===12?1:mm+1, na=mm===12?aa+1:aa; return `${String(nm).padStart(2,'0')}.${na}`; }
+function mesAnterior(m){ const [mm,aa]=m.split('.').map(Number); const nm=mm===1?12:mm-1, na=mm===1?aa-1:aa; return `${String(nm).padStart(2,'0')}.${na}`; }
+function mesNome(m){ return MESES_NOME[parseInt(m.split('.')[0])]; }
 
 function autoMesPag(){
   const cid = document.getElementById('fCartao').value;
@@ -624,7 +632,7 @@ function sair(){
 // LOAD DATA
 // ============================================================
 async function loadAll(){
-  await Promise.all([loadCartoes(), loadLanc(), loadEntradas(), loadCategorias()]);
+  await Promise.all([loadCartoes(), loadLanc(), loadEntradas(), loadCategorias(), loadMeta(), loadLancAnt()]);
 }
 
 async function loadCartoes(){
@@ -680,7 +688,73 @@ async function loadEntradas(){
   entCache = LS.get(`cf_ent_${perfilAtivo}_${mes}`) || [];
 }
 
+// lançamentos do mês anterior, só para a comparação da aba Categorias
+let lancAnt = [];
+async function loadLancAnt(){
+  const mes = mesAnterior(getMes());
+  if(sbOnline){
+    try{
+      const res = await sbGet('lancamentos',`select=valor,resp,categoria&perfil_id=eq.${perfilAtivo}&mes_pag=eq.${mes}`);
+      lancAnt = res.map(l=>({valor:parseFloat(l.valor), resp:l.resp, categoria:l.categoria||'Outros'}));
+      return;
+    }catch(e){}
+  }
+  lancAnt = (LS.get(`cf_lanc_${perfilAtivo}_${mes}`) || []).map(l=>({valor:+l.valor, resp:l.resp, categoria:l.categoria||'Outros'}));
+}
+
 function totalEntradas(){ return entCache.reduce((s,e)=>s+(+e.valor||0),0); }
+
+// ---- meta de entradas do mês
+let metaCache = 0;
+
+async function loadMeta(){
+  const mes = getMes();
+  if(sbOnline){
+    try{
+      const r = await sbGet('metas',`select=valor&perfil_id=eq.${perfilAtivo}&mes=eq.${mes}`);
+      metaCache = (r && r.length) ? parseFloat(r[0].valor) : 0;
+      LS.set(`cf_meta_${perfilAtivo}_${mes}`, metaCache);
+      return;
+    }catch(e){}
+  }
+  metaCache = LS.get(`cf_meta_${perfilAtivo}_${mes}`) || 0;
+}
+
+async function definirMeta(){
+  const v = prompt('Meta de entradas para '+mesLabel(getMes())+'\n(em reais, deixe 0 para tirar a meta)', metaCache || '');
+  if(v === null) return;
+  const n = parseFloat(String(v).replace(/\./g,'').replace(',','.')) || 0;
+  metaCache = n;
+  LS.set(`cf_meta_${perfilAtivo}_${getMes()}`, n);
+  try{
+    if(sbOnline) await sbUpsert('metas',{perfil_id:perfilAtivo, mes:getMes(), valor:n});
+    showToast(n>0 ? 'Meta definida!' : 'Meta removida');
+  }catch(e){ showToast('Erro ao salvar a meta',false); }
+  renderMeta();
+}
+
+function renderMeta(){
+  const el = document.getElementById('metaBox');
+  if(!el) return;
+  const tot = totalEntradas();
+  if(!metaCache || metaCache<=0){
+    el.innerHTML = `<button class="btn btn-s btn-w" style="border-style:dashed" onclick="definirMeta()">
+      <span class="ic">+</span> Definir meta do mês</button>`;
+    return;
+  }
+  const pct   = Math.min(100, tot/metaCache*100);
+  const falta = metaCache - tot;
+  el.innerHTML = `<div onclick="definirMeta()" style="cursor:pointer">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
+      <span style="font-size:13px;color:var(--text2)">Meta ${fmt(metaCache)}</span>
+      <span style="font-size:13px;font-weight:600" class="${falta<=0?'pos':''}">${falta<=0 ? 'alcançada, +'+fmt(-falta) : 'faltam '+fmt(falta)}</span>
+    </div>
+    <div style="height:8px;background:var(--bg3);border-radius:4px;overflow:hidden">
+      <div style="height:100%;width:${pct.toFixed(1)}%;background:${falta<=0?'var(--green)':'var(--blue)'};border-radius:4px"></div>
+    </div>
+    <div style="font-size:11px;color:var(--text3);margin-top:4px">${pct.toFixed(0)}% da meta · toque para alterar</div>
+  </div>`;
+}
 
 function dataBR(d){
   if(!d) return '';
@@ -785,7 +859,7 @@ async function salvarEntrada(){
   }catch(err){ showToast('Erro ao salvar: '+err.message,false); return; }
   editEntIdx = null;
   closeSheet('sheetEntrada');
-  await loadEntradas(); renderAll();
+  await Promise.all([loadEntradas(), loadMeta()]); renderAll();
 }
 
 async function delEntrada(i){
@@ -890,12 +964,13 @@ function setNav(id){
 }
 
 async function trocarMes(){
-  await Promise.all([loadLanc(), loadEntradas()]);
+  await Promise.all([loadLanc(), loadEntradas(), loadMeta(), loadLancAnt()]);
   renderAll();
 }
 
 function renderAll(){
   renderMetrics();
+  renderMeta();
   renderEntradas();
   renderInicio();
   // mantém a aba aberta atualizada depois de editar por lá
@@ -964,6 +1039,8 @@ function openNovoLanc(){
   document.getElementById('fVal').value='';
   document.getElementById('fPA').value='1';
   document.getElementById('fPT').value='1';
+  document.getElementById('fRep').value='1';
+  document.getElementById('repWrap').style.display='';
   renderCatSugs();
   const cartoes=cartoesCache;
   document.getElementById('fCartao').innerHTML=cartoes.map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
@@ -990,8 +1067,26 @@ function editarLanc(id, i){
   document.getElementById('fVal').value=l.valor;
   document.getElementById('fPA').value=l.parcAtual||1;
   document.getElementById('fPT').value=l.parcTotal||1;
+  document.getElementById('fRep').value='1';
+  document.getElementById('repWrap').style.display='none'; // repetir só faz sentido ao criar
   renderChips(); renderSugs();
   openSheet('sheetLanc');
+}
+
+// mostra o que a repetição vai criar, para não haver surpresa
+function previewRep(){
+  const el = document.getElementById('repInfo');
+  const rep = Math.max(1, parseInt(document.getElementById('fRep').value)||1);
+  const pt  = Math.max(1, parseInt(document.getElementById('fPT').value)||1);
+  const pa  = Math.max(1, parseInt(document.getElementById('fPA').value)||1);
+  if(editLancId || editLancIdx!==null){ el.textContent='Ao editar, a repetição não se aplica.'; return; }
+  if(rep<=1){ el.textContent=''; return; }
+  let m = document.getElementById('fMesPag').value;
+  for(let k=1;k<rep;k++) m = proximoMes(m);
+  const fim = mesLabel(m);
+  el.textContent = pt>1
+    ? `Cria ${rep} lançamentos, da parcela ${pa} até ${Math.min(pt, pa+rep-1)} de ${pt}, indo até ${fim}.`
+    : `Cria ${rep} lançamentos iguais, até ${fim}.`;
 }
 
 async function salvarLanc(){
@@ -1026,8 +1121,25 @@ async function salvarLanc(){
       LS.set(`cf_lanc_${perfilAtivo}_${getMes()}`,local);
       showToast('Atualizado (offline)!');
     } else if(sbOnline){
-      await sbPost('lancamentos',entry,'return=representation');
-      showToast(mesPag===getMes()?'Adicionado!':'Adicionado em '+mesLabel(mesPag)+'!');
+      const rep = Math.min(36, Math.max(1, parseInt(document.getElementById('fRep').value)||1));
+      if(rep>1){
+        const linhas=[]; let m=mesPag;
+        for(let k=0;k<rep;k++){
+          linhas.push({...entry, mes_pag:m,
+            parc_atual: entry.parc_total>1 ? Math.min(entry.parc_total, entry.parc_atual+k) : entry.parc_atual});
+          m = proximoMes(m);
+        }
+        await sbPost('lancamentos',linhas,'return=minimal');
+        MESES_OPCOES = [...new Set([...MESES_OPCOES, ...linhas.map(x=>x.mes_pag)])]
+          .sort((a,b)=>{const[ma,aa]=a.split('.'),[mb,ab]=b.split('.');return aa===ab?ma-mb:aa-ab;});
+        const sel=document.getElementById('selMes'), atual=sel.value;
+        sel.innerHTML = MESES_OPCOES.map(x=>`<option value="${x}">${mesLabel(x)}</option>`).join('');
+        sel.value = atual;
+        showToast(rep+' lançamentos criados!');
+      } else {
+        await sbPost('lancamentos',entry,'return=representation');
+        showToast(mesPag===getMes()?'Adicionado!':'Adicionado em '+mesLabel(mesPag)+'!');
+      }
     } else {
       // offline add
       const local=LS.get(`cf_lanc_${perfilAtivo}_${mesPag}`)||[];
@@ -1156,6 +1268,29 @@ function calcCategorias(){
     .map(c=>({...c, itens:c.itens.sort((a,b)=>b.parte-a.parte)}));
 }
 
+// totais por categoria de uma lista qualquer, respeitando o modo escolhido
+function totaisPorCategoria(arr){
+  const map = {};
+  arr.forEach(l=>{
+    const rs = splitR(l.resp);
+    const valor = catModo==='meu' ? rs.filter(isEu).length*(l.valor/rs.length) : l.valor;
+    if(valor<=0) return;
+    const c = l.categoria || 'Outros';
+    map[c] = (map[c]||0) + valor;
+  });
+  return map;
+}
+
+// variação de uma categoria contra o mês anterior
+function variacao(atual, anterior){
+  if(!anterior || anterior<=0) return atual>0
+    ? `<span style="color:var(--text3)"> · novo</span>` : '';
+  const d = (atual-anterior)/anterior*100;
+  if(Math.abs(d) < 1) return `<span style="color:var(--text3)"> · igual ao mês passado</span>`;
+  const sobe = d > 0;
+  return `<span style="color:${sobe?'var(--red)':'var(--green)'}"> · ${sobe?'↑':'↓'} ${Math.abs(d).toFixed(0)}%</span>`;
+}
+
 // categorias abertas na tela
 let catAbertas = new Set();
 function toggleCat(nome){
@@ -1174,8 +1309,13 @@ function renderCategorias(){
   const lista = calcCategorias();
   const total = lista.reduce((s,c)=>s+c.total,0);
   document.getElementById('catTotal').textContent = fmt(total);
-  document.getElementById('catTotalSub').textContent =
-    catModo==='meu' ? 'só a sua parte' : 'todos os gastos do mês';
+  const ant = totaisPorCategoria(lancAnt);
+  const totalAnt = Object.keys(ant).reduce((s,k)=>s+ant[k],0);
+  const base = catModo==='meu' ? 'só a sua parte' : 'todos os gastos do mês';
+  document.getElementById('catTotalSub').innerHTML = totalAnt>0
+    ? base + ' · ' + (total>=totalAnt?'↑':'↓') + ' ' +
+      Math.abs((total-totalAnt)/totalAnt*100).toFixed(0) + '% vs ' + mesNome(mesAnterior(getMes()))
+    : base;
   const el = document.getElementById('catLista');
   if(!lista.length){ el.innerHTML = '<p class="empty">Sem gastos neste mês.</p>'; return; }
   const maior = lista[0].total;
@@ -1217,7 +1357,7 @@ function renderCategorias(){
         <div style="height:8px;background:var(--bg3);border-radius:4px;overflow:hidden">
           <div style="height:100%;width:${larg.toFixed(1)}%;background:var(--blue);border-radius:4px"></div>
         </div>
-        <div style="font-size:11px;color:var(--text3);margin-top:4px">${pct.toFixed(1)}% · ${c.qtd} ${c.qtd===1?'lançamento':'lançamentos'}${aberta?'':' · toque para abrir'}</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">${pct.toFixed(1)}% · ${c.qtd} ${c.qtd===1?'lançamento':'lançamentos'}${variacao(c.total, ant[c.nome])}${aberta?'':' · toque para abrir'}</div>
       </div>
       ${detalhe}
     </div>`;
