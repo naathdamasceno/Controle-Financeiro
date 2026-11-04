@@ -255,6 +255,9 @@ body{font-family:-apple-system,'Segoe UI',system-ui,sans-serif;background:var(--
       </div>
       <div class="panel">
         <button class="btn btn-d btn-w" onclick="sair()"><span class="ic">⎋</span> Sair</button>
+        <div style="text-align:center;font-size:11px;color:var(--text3);margin-top:.9rem">
+          Versão <strong id="appVersao">2026-11-04</strong>
+        </div>
       </div>
     </div>
   </div>
@@ -273,7 +276,7 @@ body{font-family:-apple-system,'Segoe UI',system-ui,sans-serif;background:var(--
     <div class="sh-handle"></div>
     <h3 id="shLancTitulo">Nova despesa</h3>
     <div class="g2">
-      <div class="field"><label>Cartão / Forma</label><select id="fCartao" onchange="autoMesPag()"></select></div>
+      <div class="field"><label>Cartão / Forma</label><select id="fCartao"></select></div>
       <div class="field"><label>Mês de pagamento</label><select id="fMesPag"></select></div>
     </div>
     <div class="field"><label>Descrição</label><input type="text" id="fDesc" placeholder="Ex: Restaurante..."></div>
@@ -458,16 +461,10 @@ function proximoMes(m){ const [mm,aa]=m.split('.').map(Number); const nm=mm===12
 function mesAnterior(m){ const [mm,aa]=m.split('.').map(Number); const nm=mm===1?12:mm-1, na=mm===1?aa-1:aa; return `${String(nm).padStart(2,'0')}.${na}`; }
 function mesNome(m){ return MESES_NOME[parseInt(m.split('.')[0])]; }
 
-function autoMesPag(){
-  const cid = document.getElementById('fCartao').value;
-  const c = cartoesCache.find(x=>x.id===cid);
-  if(!c||c.fecha===0){ document.getElementById('fMesPag').value=getMes(); return; }
-  const hoje = new Date();
-  const dia = hoje.getDate();
-  const mes = getMes();
-  if(dia >= c.fecha){ document.getElementById('fMesPag').value = proximoMes(mes); }
-  else { document.getElementById('fMesPag').value = mes; }
-}
+// O mês de pagamento começa sempre no mês que está selecionado na tela.
+// Antes ele era calculado pelo dia de fechamento do cartão contra a data de
+// hoje, o que jogava o lançamento para o mês seguinte quando você estava
+// navegando em outro mês. O seletor continua aberto para trocar à mão.
 
 // ============================================================
 // UTILS
@@ -616,6 +613,7 @@ async function doLogin(){
 
   await loadAll();
   renderAll();
+  setNav('inicio'); // sem isto o botão + fica escondido até tocar numa aba
 }
 
 function sair(){
@@ -1046,7 +1044,6 @@ function openNovoLanc(){
   document.getElementById('fCartao').innerHTML=cartoes.map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
   document.getElementById('fMesPag').innerHTML=MESES_OPCOES.map(m=>`<option value="${m}">${mesLabel(m)}</option>`).join('');
   document.getElementById('fMesPag').value=getMes();
-  autoMesPag();
   renderChips(); renderSugs();
   openSheet('sheetLanc');
   setTimeout(()=>document.getElementById('fDesc').focus(),200);
