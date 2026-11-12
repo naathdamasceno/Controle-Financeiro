@@ -256,7 +256,7 @@ body{font-family:-apple-system,'Segoe UI',system-ui,sans-serif;background:var(--
       <div class="panel">
         <button class="btn btn-d btn-w" onclick="sair()"><span class="ic">⎋</span> Sair</button>
         <div style="text-align:center;font-size:11px;color:var(--text3);margin-top:.9rem">
-          Versão <strong id="appVersao">2026-11-04</strong>
+          Versão <strong id="appVersao">2026-11-12</strong>
         </div>
       </div>
     </div>
@@ -287,7 +287,7 @@ body{font-family:-apple-system,'Segoe UI',system-ui,sans-serif;background:var(--
     <div class="g2">
       <div class="field"><label>Valor total (R$)</label><input type="number" id="fVal" placeholder="0,00" step="0.01" min="0" oninput="renderChips()"></div>
       <div class="field"><label>Parcela (atual / total)</label>
-        <div class="parc-row"><input type="number" id="fPA" value="1" min="1" oninput="previewRep()"><span>de</span><input type="number" id="fPT" value="1" min="1" oninput="previewRep()"></div>
+        <div class="parc-row"><input type="number" id="fPA" value="1" min="1" oninput="autoRep()"><span>de</span><input type="number" id="fPT" value="1" min="1" oninput="autoRep()"></div>
       </div>
     </div>
     <div class="field" id="repWrap">
@@ -1070,6 +1070,16 @@ function editarLanc(id, i){
   openSheet('sheetLanc');
 }
 
+// ao mudar a parcela, já sugere lançar todas as parcelas que faltam (ex: 3 de 12 -> 10 meses)
+function autoRep(){
+  if(!(editLancId || editLancIdx!==null)){
+    const pt = Math.max(1, parseInt(document.getElementById('fPT').value)||1);
+    const pa = Math.max(1, parseInt(document.getElementById('fPA').value)||1);
+    document.getElementById('fRep').value = pt>1 ? Math.min(36, Math.max(1, pt-pa+1)) : 1;
+  }
+  previewRep();
+}
+
 // mostra o que a repetição vai criar, para não haver surpresa
 function previewRep(){
   const el = document.getElementById('repInfo');
@@ -1138,11 +1148,17 @@ async function salvarLanc(){
         showToast(mesPag===getMes()?'Adicionado!':'Adicionado em '+mesLabel(mesPag)+'!');
       }
     } else {
-      // offline add
-      const local=LS.get(`cf_lanc_${perfilAtivo}_${mesPag}`)||[];
-      local.push({desc:entry.descricao,valor:val,cartao:entry.cartao_id,resp:entry.resp,parcAtual:entry.parc_atual,parcTotal:entry.parc_total,mesPag,sit:'',tipo:'gasto',pagos:[]});
-      LS.set(`cf_lanc_${perfilAtivo}_${mesPag}`,local);
-      showToast('Adicionado (offline)!');
+      // offline add (também respeita a repetição)
+      const rep = Math.min(36, Math.max(1, parseInt(document.getElementById('fRep').value)||1));
+      let m=mesPag;
+      for(let k=0;k<rep;k++){
+        const pa = entry.parc_total>1 ? Math.min(entry.parc_total, entry.parc_atual+k) : entry.parc_atual;
+        const local=LS.get(`cf_lanc_${perfilAtivo}_${m}`)||[];
+        local.push({desc:entry.descricao,valor:val,cartao:entry.cartao_id,categoria:entry.categoria,resp:entry.resp,parcAtual:pa,parcTotal:entry.parc_total,mesPag:m,sit:'',tipo:'gasto',pagos:[]});
+        LS.set(`cf_lanc_${perfilAtivo}_${m}`,local);
+        m = proximoMes(m);
+      }
+      showToast(rep>1 ? rep+' lançamentos criados (offline)!' : 'Adicionado (offline)!');
     }
   } catch(e){ showToast('Erro ao salvar: '+e.message,false); return; }
 
@@ -1165,6 +1181,7 @@ async function delLanc(id, i){
 
 async function passarMes(id, i){
   const l=lancCache[i], prox=proximoMes(getMes());
+  if(l.parcTotal>1 && l.parcAtual>=l.parcTotal){ showToast('Essa já é a última parcela.',false); return; }
   const entry={
     perfil_id: perfilAtivo,
     mes_pag: prox,
@@ -1173,7 +1190,7 @@ async function passarMes(id, i){
     cartao_id: l.cartao,
     categoria: l.categoria||'Outros',
     resp: l.resp,
-    parc_atual: l.parcTotal>1?Math.max(1,l.parcAtual-1):l.parcAtual,
+    parc_atual: l.parcTotal>1?Math.min(l.parcTotal,l.parcAtual+1):l.parcAtual,
     parc_total: l.parcTotal,
     sit: '',
     tipo: l.tipo||'gasto',
